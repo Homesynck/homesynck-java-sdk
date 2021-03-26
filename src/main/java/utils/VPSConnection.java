@@ -5,7 +5,31 @@ import java.util.HashMap;
 import ch.kuon.phoenix.Socket;
 
 public class VPSConnection {
+
     private static Socket socket;
+
+    private static String authToken;
+    private static String userId;
+
+    public static void setAuth_token(String auth_token) {
+        authToken = auth_token;
+    }
+
+    public static void setUser_id(String user_id) {
+        userId = user_id;
+    }
+
+    public static String getAuth_token() {
+        return authToken;
+    }
+
+    public static String getUser_id() {
+        return userId;
+    }
+
+    static {
+        socket = getSocket();
+    }
 
     public static Socket getSocket(){
         if (socket == null){
@@ -28,7 +52,7 @@ public class VPSConnection {
         });
 
         HashMap<String, Object> params = new HashMap<>();
-        params.put("user_token", "supersecret");
+        params.put("user_token", "tibo");
         opts.setParams(params); // params
 
         socket = new Socket("wss://homesynck.anicetnougaret.fr/socket", opts);

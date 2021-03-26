@@ -1,8 +1,12 @@
 package file;
 
+import ch.kuon.phoenix.Channel;
+import ch.kuon.phoenix.Socket;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.Patch;
+import com.github.openjson.JSONObject;
 import org.jetbrains.annotations.NotNull;
+import utils.VPSConnection;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,9 +18,12 @@ import java.util.*;
 
 public class FileManager {
 
+    private List<JSONObject> objectsPush;
+
     private File baseDirectory;
     private File storageDirectory;
     private File saveDirectory;
+    private File dataDirectory;
 
     public FileManager(String storageFile){
         this.baseDirectory = new File(storageFile);
@@ -28,6 +35,7 @@ public class FileManager {
         if (!saveDirectory.exists()){
             saveDirectory.mkdirs();
         }
+        objectsPush = new LinkedList<>();
     }
 
     public void editFile(String stringPath, String content) throws IOException{
@@ -39,7 +47,9 @@ public class FileManager {
     public void deleteFile(String stringPath){
         File f = new File(storageDirectory, stringPath);
         f.delete();
-
+        JSONObject del = new JSONObject();
+        del.accumulate("delete", f.getPath());
+        objectsPush.add(del);
     }
 
     private List<Patch<String>> getDiffs(){
@@ -94,5 +104,9 @@ public class FileManager {
             }
         }
         return allFiles;
+    }
+
+    private void sync(){
+
     }
 }

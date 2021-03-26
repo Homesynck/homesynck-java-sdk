@@ -2,18 +2,22 @@ package accounts;
 
 import ch.kuon.phoenix.Channel;
 import com.github.openjson.JSONObject;
+import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import utils.VPSConnection;
 
 import ch.kuon.phoenix.Socket;
 
+import java.util.function.Function;
+
 
 public class Session {
 
     private static Session session;
+    private boolean phone;
+    private String userId;
 
     private String name;
-    private boolean connected;
 
     private Session(){
     }
@@ -33,8 +37,17 @@ public class Session {
         this.name = name;
     }
 
-    public boolean register(String username, String password, String token){
-        Socket socket = VPSConnection.getSocket();
+    /**
+     * Allow user to register to the server.
+     * @param username  username of the new user
+     * @param password  password of the new user
+     * @param token     the token for the new user
+     * @param function  the function to execute if the new user was created
+     */
+    public void register(String username, String password, String token, Function<String[], Void> function){
+        Socket socket;
+
+        socket = VPSConnection.getSocket();
 
         Channel ch = socket.channel("auth:lobby", new JSONObject());
 
@@ -45,11 +58,16 @@ public class Session {
                 .accumulate("login", username)
                 .accumulate("password", password);
 
-        connect(ch, socket, registerParams, "register");
-        return this.connected;
+        connect(ch, socket, registerParams, "register", function);
     }
 
-    public boolean login(String username, String password){
+    /**
+     * Allow user to login to an already created account.
+     * @param username  username of the user
+     * @param password  password of the user
+     * @param function  the function to execute when you are connected
+     */
+    public void login(String username, String password, Function<String[], Void> function){
         Socket socket = VPSConnection.getSocket();
 
         Channel ch = socket.channel("auth:lobby", new JSONObject());
@@ -60,25 +78,47 @@ public class Session {
         connectionParams.accumulate("login", username)
                 .accumulate("password", password);
 
-        connect(ch,socket,connectionParams,"login");
-        return this.connected;
+        connect(ch,socket,connectionParams,"login", function);
     }
 
-    private void connect(@NotNull Channel ch, @NotNull Socket socket , JSONObject params, String event){
+    private void connect(@NotNull Channel ch, @NotNull Socket socket , JSONObject params, String event, Function<String[], Void> function){
+        this.userId = null;
         ch.push(event, params, socket.getOpts().getTimeout()).receive("ok", msg -> {
-            this.connected = true;
+            VPSConnection.setUser_id(msg.getString("user_id"));
+            VPSConnection.setAuth_token(msg.getString("auth_token"));
+            String[] str = new String[]{msg.getString("user_id"), msg.getString("auth_token")};
+            function.apply(str);
+            this.userId = msg.getString("user_id");
             return null;
         }).receive("error", msg -> {
-            this.connected = false;
-            return null;
+            throw new ServerErrorException(msg.getString("error"));
         });
     }
 
-    private boolean phoneValidation(String phoneNumber){
+    /**
+     * Send the phone number to the server. This function is require before any creation of
+     * a new user.
+     * @param phoneNumber   phone number of the new user
+     * @param function      the function to execute when the server response that this phone number is correct
+     */
+    public void phoneValidation(String phoneNumber, Function<String, Void> function){
         Socket socket = VPSConnection.getSocket();
 
         Channel ch =socket.channel("auth:lobby", new JSONObject());
 
-        return false;
+        ch.join(socket.getOpts().getTimeout());
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.accumulate("phone", phoneNumber);
+
+        this.phone = false;
+        Object u;
+        ch.push("validate_phone",jsonObject,socket.getOpts().getTimeout()).receive("ok", msg -> {
+            this.phone = true;
+            function.apply("");
+            return null;
+        }).receive("error", msg -> {
+            throw new ServerErrorException(msg.getString("reason"));
+        });
     }
 }
