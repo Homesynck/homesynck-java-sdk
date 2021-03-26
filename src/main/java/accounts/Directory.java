@@ -10,7 +10,16 @@ import java.util.function.Function;
 public class Directory {
     private static String dirId;
 
-    public static String createSecured(String name, String description, String thumbnailUrl, String password, Function<String, Void> function){
+    /**
+     * Create a secured directory with a password on the server. You need to be authentificate before create or
+     * access a directory
+     * @param name          Name of the directory
+     * @param description   Description of the new directory
+     * @param thumbnailUrl  The thumbnail url of the new directory
+     * @param password      user password for the new Directory
+     * @param function      the function executed if the directory has been created
+     */
+    public static void createSecured(String name, String description, String thumbnailUrl, String password, Function<String, Void> function){
         Socket socket = VPSConnection.getSocket();
 
         JSONObject channelParams = new JSONObject();
@@ -35,11 +44,17 @@ public class Directory {
         }).receive("error",msg -> {
             throw new ServerErrorException(msg.getString("error"));
         });
-        return dirId;
     }
 
-    public static String create(String name, String description, String thumbnail, Function<String, Void> function){
-        return createSecured(name, description, thumbnail, "", function);
+    /**
+     * Create directory were the.
+     * @param name          Name of the directory
+     * @param description   Description of the new directory
+     * @param thumbnail     The thumbnail url of the new directory
+     * @param function      the function executed if the directory has been created
+     */
+    public static void create(String name, String description, String thumbnail, Function<String, Void> function){
+        createSecured(name, description, thumbnail, "", function);
     }
 
     public static void open(String name){
