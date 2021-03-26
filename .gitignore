@@ -1,3 +1,3 @@
 /.idea
 /.gradle
-/src/main/java/testClass.java
+src/main/java/TestClass.java
