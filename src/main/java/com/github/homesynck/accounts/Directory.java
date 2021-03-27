@@ -46,7 +46,7 @@ public class Directory {
             successConsumer.accept(msg.getString("directory_id"));
             return null;
         }).receive("error",msg -> {
-            errorConsumer.accept(msg.getString("error"));
+            errorConsumer.accept(msg.getString("reason"));
             return null;
         });
     }
