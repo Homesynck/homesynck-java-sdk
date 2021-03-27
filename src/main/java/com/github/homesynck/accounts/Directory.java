@@ -38,7 +38,7 @@ public class Directory {
         createdJson.accumulate("name", name)
                 .accumulate("description", description)
                 .accumulate("thumbnail_url", thumbnailUrl)
-                .accumulate("is_secured", password.isEmpty())
+                .accumulate("is_secured", !password.isEmpty())
                 .accumulate("password", password);
 
         ch.push("create", createdJson,socket.getOpts().getTimeout()).receive("ok", msg -> {
