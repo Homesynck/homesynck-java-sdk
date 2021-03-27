@@ -81,7 +81,8 @@ public class Session {
      * @param username  username of the user
      * @param password  password of the user
      * @param successConsumer   Consumer that receive a array with the auth_token and the user_id when
-     *                          the login is successful
+     *                          the login is successful. The auth_token and the user_id are stored by the
+     *                          API and are just returned for information
      * @param errorConsumer     Consumer that receive the error from the server when the login
      *                          fail
      */
