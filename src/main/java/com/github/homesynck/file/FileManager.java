@@ -1,12 +1,9 @@
-package file;
+package com.github.homesynck.file;
 
-import ch.kuon.phoenix.Channel;
-import ch.kuon.phoenix.Socket;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.Patch;
 import com.github.openjson.JSONObject;
 import org.jetbrains.annotations.NotNull;
-import utils.VPSConnection;
 
 import java.io.File;
 import java.io.IOException;

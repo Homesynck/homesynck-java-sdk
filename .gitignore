@@ -1,11 +1,10 @@
 /.idea
 /.gradle
-src/main/java/TestClass.java
 
-# Compiled class file
+# Compiled class com.github.homesynck.file
 *.class
 
-# Log file
+# Log com.github.homesynck.file
 *.log
 
 # BlueJ files

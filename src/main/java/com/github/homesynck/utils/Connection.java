@@ -1,10 +1,10 @@
-package utils;
+package com.github.homesynck.utils;
 
 import java.util.HashMap;
 
 import ch.kuon.phoenix.Socket;
 
-public class VPSConnection {
+public class Connection {
 
     private static Socket socket;
 
