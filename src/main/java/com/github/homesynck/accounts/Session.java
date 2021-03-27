@@ -15,7 +15,6 @@ public class Session {
 
     private static Session session;
     private boolean phone;
-    private String userId;
 
     private String name;
 
@@ -103,13 +102,11 @@ public class Session {
 
     private void connect(@NotNull Channel ch, @NotNull Socket socket , JSONObject params, String event,
                          Consumer<String[]> successFunction, Consumer<String> errorFunction){
-        this.userId = null;
         ch.push(event, params, socket.getOpts().getTimeout()).receive("ok", msg -> {
             Connection.setUser_id(msg.getString("user_id"));
             Connection.setAuth_token(msg.getString("auth_token"));
             String[] str = new String[]{msg.getString("user_id"), msg.getString("auth_token")};
             successFunction.accept(str);
-            this.userId = msg.getString("user_id");
             return null;
         }).receive("error", msg -> {
             errorFunction.accept(msg.getString("error"));
