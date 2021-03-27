@@ -109,7 +109,7 @@ public class Session {
             successFunction.accept(str);
             return null;
         }).receive("error", msg -> {
-            errorFunction.accept(msg.getString("error"));
+            errorFunction.accept(msg.getString("reason"));
             return null;
         });
     }
@@ -138,7 +138,7 @@ public class Session {
             successConsumer.accept("");
             return null;
         }).receive("error", msg -> {
-            errorConsumer.accept(msg.getString("error"));
+            errorConsumer.accept(msg.getString("reason"));
             return null;
         });
     }
