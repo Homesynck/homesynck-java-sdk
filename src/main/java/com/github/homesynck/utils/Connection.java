@@ -8,6 +8,8 @@ public class Connection {
 
     private static Socket socket;
 
+    private static String host = "wss://homesynck.anicetnougaret.fr/socket";
+
     private static String authToken;
     private static String userId;
 
@@ -25,6 +27,10 @@ public class Connection {
 
     public static String getUser_id() {
         return userId;
+    }
+
+    public static void setHost(String newHost){
+        host = newHost;
     }
 
     static {
@@ -55,7 +61,7 @@ public class Connection {
         params.put("user_token", "tibo");
         opts.setParams(params); // params
 
-        socket = new Socket("wss://homesynck.anicetnougaret.fr/socket", opts);
+        socket = new Socket(host, opts);
         socket.connect();
 
         System.out.println("Socket instanciation ->" +socket.toString());
