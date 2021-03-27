@@ -10,6 +10,8 @@ import java.util.function.Consumer;
 public class Directory {
     private static String dirId;
 
+    private static final String topic = "directories:lobby";
+
     /**
      * Create a secured directory with a password on the server. You need to be authenticate before create or
      * access a directory
@@ -28,7 +30,7 @@ public class Directory {
         channelParams.accumulate("auth_token", Connection.getAuth_token())
                 .accumulate("user_id", Connection.getUser_id());
 
-        Channel ch = socket.channel("directories:lobby", channelParams);
+        Channel ch = socket.channel(topic, channelParams);
 
         ch.join(socket.getOpts().getTimeout());
 
@@ -62,7 +64,29 @@ public class Directory {
         createSecured(name, description, thumbnail, "", successConsumer, errorConsumer);
     }
 
-    public static void open(String name){
+    public static void openSecured(String name, String password, Consumer<String> successConsumer, Consumer<String> errorConsumer){
+        Socket socket = Connection.getSocket();
 
+        Channel ch = socket.channel(topic, new JSONObject());
+
+        ch.join(socket.getOpts().getTimeout());
+
+        JSONObject sendParams = new JSONObject();
+        sendParams.accumulate("name", name)
+                .accumulate("is_secured", password.isEmpty())
+                .accumulate("password", password);
+
+        ch.push("open", sendParams, socket.getOpts().getTimeout()).receive("ok", msg -> {
+            dirId = msg.getString("directory_id");
+            successConsumer.accept(msg.getString("directory_id"));
+            return null;
+        }).receive("error", msg -> {
+            errorConsumer.accept(msg.getString("reason"));
+            return null;
+        });
+    }
+
+    public static void open(String name, Consumer<String> successConsumer, Consumer<String> errorConsumer){
+        openSecured(name, "", successConsumer, errorConsumer);
     }
 }
