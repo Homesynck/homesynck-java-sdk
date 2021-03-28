@@ -2,7 +2,7 @@
 
 ## How to install?
 
-### With maven:
+### With maven
 
 Add the following dependency to your **pom.xml** to import the api :
 
@@ -14,7 +14,7 @@ Add the following dependency to your **pom.xml** to import the api :
 </dependency>
 ```
 
-### With Gradle:
+### With Gradle
 
 Add the following dependency to your **build.gradle** to import the api :
 ```gradle
@@ -32,7 +32,7 @@ com.github.homesynck.utils.Connection.setHost("ws://example.com/socket");   // w
 com.github.homesynck.utils.Connection.setHost("wss://example.com/socket");  // with https server
 ```
 
-### Authentication:
+### Authentication
 
 To register, first you will need to send your phone number to the server in order to avoid fake account creation. One phone number can only create one account every thirty days. Then, a token will be sent to the user on their mobile. You can now register to the server by using the register method.
 Here is an example:
@@ -55,7 +55,7 @@ public class Register {
     public static void register(Session session){
 
         Scanner sc = new Scanner(System.in);
-        System.out.println("Enter the token send by sms : ");
+        System.out.println("Enter the token sent by sms : ");
         String token = sc.next();
 
         session.register("John doe", "I<3AgeOfEmpires", token , response -> {
