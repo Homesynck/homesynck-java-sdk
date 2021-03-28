@@ -61,10 +61,10 @@ public class Connection {
         socket = new Socket(host, opts);
         socket.connect();
 
-        System.out.println("Socket instanciation ->" +socket.toString());
+        System.out.println("Socket instantiation ->" +socket.toString());
 
         socket.onError((String msg) -> {
-            System.out.println("There was an error with the connection!");
+            System.out.println("An error occurred while we trying reach the socket connection!");
             return null;
         });
         socket.onClose((Integer code, String msg) -> {
