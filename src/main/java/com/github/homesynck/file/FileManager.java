@@ -43,10 +43,12 @@ public class FileManager {
 
     public void deleteFile(String stringPath){
         File f = new File(storageDirectory, stringPath);
-        f.delete();
-        JSONObject del = new JSONObject();
-        del.accumulate("delete", f.getPath());
-        objectsPush.add(del);
+        boolean isDelete = f.delete();
+        if (isDelete) {
+            JSONObject del = new JSONObject();
+            del.accumulate("delete", f.getPath());
+            objectsPush.add(del);
+        }
     }
 
     private List<Patch<String>> getDiffs(){
@@ -101,9 +103,5 @@ public class FileManager {
             }
         }
         return allFiles;
-    }
-
-    private void sync(){
-
     }
 }

@@ -33,9 +33,6 @@ public class Connection {
         host = newHost;
     }
 
-    static {
-        socket = getSocket();
-    }
 
     public static Socket getSocket(){
         if (socket == null){
