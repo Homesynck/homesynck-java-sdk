@@ -1,8 +1,8 @@
 package com.github.homesynck.connect;
 
-import java.util.HashMap;
-
 import ch.kuon.phoenix.Socket;
+
+import java.util.HashMap;
 
 public class Connection {
 
@@ -14,20 +14,20 @@ public class Connection {
     private static String userId;
     private static String directoryId;
 
-    public static void setAuth_token(String auth_token) {
-        authToken = auth_token;
-    }
-
-    public static void setUser_id(String user_id) {
-        userId = user_id;
-    }
-
     public static String getAuth_token() {
         return authToken;
     }
 
+    public static void setAuth_token(String auth_token) {
+        authToken = auth_token;
+    }
+
     public static String getUser_id() {
         return userId;
+    }
+
+    public static void setUser_id(String user_id) {
+        userId = user_id;
     }
 
     public static String getDirectoryId() {
@@ -38,13 +38,13 @@ public class Connection {
         Connection.directoryId = directoryId;
     }
 
-    public static void setHost(String newHost){
+    public static void setHost(String newHost) {
         host = newHost;
     }
 
 
-    public static Socket getSocket(){
-        if (socket == null){
+    public static Socket getSocket() {
+        if (socket == null) {
             newSocket();
         }
         return socket;
@@ -70,7 +70,7 @@ public class Connection {
         socket = new Socket(host, opts);
         socket.connect();
 
-        System.out.println("Socket instantiation ->" +socket.toString());
+        System.out.println("Socket instantiation ->" + socket.toString());
 
         socket.onError((String msg) -> {
             System.out.println("An error occurred while we trying reach the socket connection!");
