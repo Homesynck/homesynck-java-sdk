@@ -9,7 +9,6 @@ import java.util.function.Consumer;
 
 public class Directory {
     private static String dirId;
-
     private static final String topic = "directories:lobby";
 
     /**
@@ -29,6 +28,7 @@ public class Directory {
         JSONObject channelParams = new JSONObject();
         channelParams.accumulate("auth_token", Connection.getAuth_token())
                 .accumulate("user_id", Connection.getUser_id());
+
 
         Channel ch = socket.channel(topic, channelParams);
 
@@ -73,7 +73,7 @@ public class Directory {
 
         JSONObject sendParams = new JSONObject();
         sendParams.accumulate("name", name)
-                .accumulate("is_secured", password.isEmpty())
+                .accumulate("is_secured", !password.isEmpty())
                 .accumulate("password", password);
 
         ch.push("open", sendParams, socket.getOpts().getTimeout()).receive("ok", msg -> {
