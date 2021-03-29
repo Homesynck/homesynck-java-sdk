@@ -1,9 +1,8 @@
-package com.github.homesynck.accounts;
+package com.github.homesynck.connect;
 
 import ch.kuon.phoenix.Channel;
 import com.github.openjson.JSONObject;
 import org.jetbrains.annotations.NotNull;
-import com.github.homesynck.utils.*;
 
 
 import ch.kuon.phoenix.Socket;

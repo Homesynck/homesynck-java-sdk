@@ -1,4 +1,4 @@
-package com.github.homesynck.accounts;
+package com.github.homesynck.data;
 
 public class ServerErrorException extends RuntimeException{
     public ServerErrorException(String s){

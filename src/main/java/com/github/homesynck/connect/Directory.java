@@ -1,14 +1,13 @@
-package com.github.homesynck.accounts;
+package com.github.homesynck.connect;
 
 import ch.kuon.phoenix.Channel;
 import ch.kuon.phoenix.Socket;
 import com.github.openjson.JSONObject;
-import com.github.homesynck.utils.*;
+import com.github.homesynck.connect.*;
 
 import java.util.function.Consumer;
 
 public class Directory {
-    private static String dirId;
     private static final String topic = "directories:lobby";
 
     /**
@@ -29,7 +28,6 @@ public class Directory {
         channelParams.accumulate("auth_token", Connection.getAuth_token())
                 .accumulate("user_id", Connection.getUser_id());
 
-
         Channel ch = socket.channel(topic, channelParams);
 
         ch.join(socket.getOpts().getTimeout());
@@ -42,7 +40,7 @@ public class Directory {
                 .accumulate("password", password);
 
         ch.push("create", createdJson,socket.getOpts().getTimeout()).receive("ok", msg -> {
-            dirId = msg.getString("directory_id");
+            Connection.setDirectoryId(msg.getString("directory_id"));
             successConsumer.accept(msg.getString("directory_id"));
             return null;
         }).receive("error",msg -> {
@@ -65,25 +63,7 @@ public class Directory {
     }
 
     public static void openSecured(String name, String password, Consumer<String> successConsumer, Consumer<String> errorConsumer){
-        Socket socket = Connection.getSocket();
-
-        Channel ch = socket.channel(topic, new JSONObject());
-
-        ch.join(socket.getOpts().getTimeout());
-
-        JSONObject sendParams = new JSONObject();
-        sendParams.accumulate("name", name)
-                .accumulate("is_secured", !password.isEmpty())
-                .accumulate("password", password);
-
-        ch.push("open", sendParams, socket.getOpts().getTimeout()).receive("ok", msg -> {
-            dirId = msg.getString("directory_id");
-            successConsumer.accept(msg.getString("directory_id"));
-            return null;
-        }).receive("error", msg -> {
-            errorConsumer.accept(msg.getString("reason"));
-            return null;
-        });
+        createSecured(name, "", "", password, successConsumer, errorConsumer);
     }
 
     public static void open(String name, Consumer<String> successConsumer, Consumer<String> errorConsumer){

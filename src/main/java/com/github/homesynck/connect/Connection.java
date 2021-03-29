@@ -1,4 +1,4 @@
-package com.github.homesynck.utils;
+package com.github.homesynck.connect;
 
 import java.util.HashMap;
 
@@ -12,6 +12,7 @@ public class Connection {
 
     private static String authToken;
     private static String userId;
+    private static String directoryId;
 
     public static void setAuth_token(String auth_token) {
         authToken = auth_token;
@@ -27,6 +28,14 @@ public class Connection {
 
     public static String getUser_id() {
         return userId;
+    }
+
+    public static String getDirectoryId() {
+        return directoryId;
+    }
+
+    public static void setDirectoryId(String directoryId) {
+        Connection.directoryId = directoryId;
     }
 
     public static void setHost(String newHost){
