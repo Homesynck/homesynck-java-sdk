@@ -64,12 +64,26 @@ public class FileManager {
         return allFiles;
     }
 
+    /**
+     * Edit the file specified by path
+     *
+     * @param stringPath    The path of the file
+     * @param content       The content that will override the file
+     * @throws IOException  if an I/O error occurs writing to or creating the file,
+     *                      or the text cannot be encoded using the specified charset
+     */
     public void editFile(@NotNull String stringPath, @NotNull String content) throws IOException {
         Path out = Paths.get(storageDirectory.getPath() + stringPath);
         List<String> contentList = new ArrayList<>(Arrays.asList(content.split(System.lineSeparator())));
         Files.write(out, contentList, Charset.defaultCharset());
     }
 
+    /**
+     * Get all the files stored by the api and give it to the user. It gives the more recent version found
+     * on the device for all files.
+     *
+     * @return  the {@link HashMap} with path on key and content on value
+     */
     public HashMap<String, String> getFiles() {
         HashMap<String, String> hashMap = new HashMap<>();
         for (File f : getAllFiles(storageDirectory)) {
@@ -87,6 +101,13 @@ public class FileManager {
         return hashMap;
     }
 
+    /**
+     * Get a file with a specified.
+     *
+     * @param stringPath
+     * @return
+     * @throws IOException
+     */
     public String getFile(@NotNull String stringPath) throws IOException {
         List<String> stringList = Files.readAllLines(Paths.get(stringPath));
         StringBuilder sb = new StringBuilder();
@@ -96,6 +117,12 @@ public class FileManager {
         return sb.toString();
     }
 
+    /**
+     * Delete the file specified with the path
+     *
+     * @param stringPath        path of the file that will be deleted
+     * @throws FileException    if here is an error with the file deletion
+     */
     public void deleteFile(@NotNull String stringPath) throws FileException {
         File f = new File(storageDirectory, stringPath);
         boolean isDelete = f.delete();
@@ -129,7 +156,7 @@ public class FileManager {
         }
     }
 
-    public void applyPatch(@NotNull String patchId, @NotNull String path, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
+    void applyPatch(@NotNull String patchId, @NotNull String path, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
         addUpdate(patchId);
         List<String> unifiedPatchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
         Patch<String> patch = UnifiedDiffUtils.parseUnifiedDiff(unifiedPatchList);
@@ -160,6 +187,11 @@ public class FileManager {
         }
     }
 
+    /**
+     * get the last past id pushed on the server
+     *
+     * @return the patch id
+     */
     public int getPatchId() {
         try {
             List<String> list = Files.readAllLines(new File(dataDirectory, "patchlist.hs").toPath());
@@ -170,7 +202,7 @@ public class FileManager {
         }
     }
 
-    public String getListUpdate() {
+    String getListUpdate() {
         StringBuilder sb = new StringBuilder();
         File f = new File(dataDirectory, "patchlist.hs");
         List<String> list;
@@ -195,7 +227,7 @@ public class FileManager {
 
     }
 
-    public void accept(@NotNull String PatchId, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
+    void accept(@NotNull String PatchId, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
         addUpdate(PatchId);
 
         String path = FileSynck.getFilesPath(unifiedPatch);
