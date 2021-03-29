@@ -82,15 +82,14 @@ public class FileSynck {
         }
     }
 
-    private void pushUpdate(String rank, String instruction, Consumer<String> successConsumer
+    private void pushUpdate(String rank, String patch, Consumer<String> successConsumer
             , Consumer<String> errorConsumer) {
 
-        JSONObject payload = initPushChannel(rank, instruction);
-
+        JSONObject payload = initPushChannel(rank, patch);
         ch.push("push_update", payload, socket.getOpts().getTimeout())
                 .receive("ok", success -> {
                     try {
-                        fileManager.accept(rank, instruction);
+                        fileManager.accept(rank, patch);
                         successConsumer.accept("Update sent successfully ");
                     } catch (IOException | PatchFailedException e) {
                         errorConsumer.accept("There was an error while we trying to sync on your device");
@@ -103,10 +102,18 @@ public class FileSynck {
         );
     }
 
-    public void pushUpdate(@NotNull String patch, @NotNull Consumer<String> successConsumer, @NotNull Consumer<String> errorConsumer) {
+    public void pushUpdate(@NotNull Consumer<String> successConsumer, @NotNull Consumer<String> errorConsumer) {
 
-        String patchId = String.valueOf(fileManager.getPatchId());
-        pushUpdate(patchId, patch, successConsumer, errorConsumer);
+        List<String> patches = fileManager.getPatch();
+        int patchId = fileManager.getPatchId();
+        if(patchId == 0) patchId++;
+
+        if(!patches.isEmpty()) {
+            for(String patch: patches) {
+                pushUpdate(String.valueOf(patchId++), patch,
+                        successConsumer, errorConsumer);
+            }
+        }
     }
 
     private JSONObject initPushChannel(String rank, String instruction) {
