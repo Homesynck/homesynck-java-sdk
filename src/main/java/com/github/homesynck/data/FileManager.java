@@ -1,4 +1,4 @@
-package com.github.homesynck.file;
+package com.github.homesynck.data;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
@@ -37,13 +37,30 @@ public class FileManager {
         }
     }
 
-    public void editFile(String stringPath, String content) throws IOException{
+    public void editFile(@NotNull String stringPath,@NotNull String content) throws IOException{
         Path out = Paths.get(storageDirectory.getPath() + stringPath);
         List<String> contentList = new ArrayList<>(Arrays.asList(content.split(System.lineSeparator())));
         Files.write(out,contentList, Charset.defaultCharset());
     }
 
-    public String getFile(String stringPath) throws IOException{
+    public HashMap<String, String> getFiles(){
+        HashMap<String, String> hashMap = new HashMap<>();
+        for(File f:getAllFiles(storageDirectory)){
+            try {
+                List<String> list = Files.readAllLines(f.toPath());
+                StringBuilder sb = new StringBuilder();
+                for (String s:list){
+                    sb.append(s).append(System.lineSeparator());
+                }
+                hashMap.put(f.getPath(), sb.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return hashMap;
+    }
+
+    public String getFile(@NotNull String stringPath) throws IOException{
         List<String> stringList = Files.readAllLines(Paths.get(stringPath));
         StringBuilder sb = new StringBuilder();
         for (String s:stringList){
@@ -52,7 +69,7 @@ public class FileManager {
         return sb.toString();
     }
 
-    public void deleteFile(String stringPath)throws FileException {
+    public void deleteFile(@NotNull String stringPath)throws FileException {
         File f = new File(storageDirectory, stringPath);
         boolean isDelete = f.delete();
 
@@ -85,7 +102,8 @@ public class FileManager {
         }
     }
 
-    public void applyPatch(String patchId, String path, String unifiedPatch) throws IOException, PatchFailedException {
+    public void applyPatch(@NotNull String patchId, @NotNull String path,@NotNull String unifiedPatch) throws IOException, PatchFailedException {
+        addUpdate(patchId);
         List<String> unifiedPatchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
         Patch<String> patch = UnifiedDiffUtils.parseUnifiedDiff(unifiedPatchList);
 
@@ -98,11 +116,9 @@ public class FileManager {
 
         Files.write(saveFile.toPath(), result, Charset.defaultCharset());
         Files.write(storedFile.toPath(), result, Charset.defaultCharset());
-
-        addUpdate(patchId);
     }
 
-    public void addUpdate(String patchId){
+    private void addUpdate(String patchId){
         File patchFile = new File(dataDirectory, "patchList.hs");
         try {
             List<String> updateList = Files.readAllLines(patchFile.toPath());
@@ -117,13 +133,31 @@ public class FileManager {
         }
     }
 
-    public String getListUpdate() throws IOException {
+    public int getPatchId(){
+        try {
+            List<String> list = Files.readAllLines(new File(dataDirectory, "patchlist.hs").toPath());
+            return list.size();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 1;
+        }
+    }
+
+    public String getListUpdate() {
         StringBuilder sb = new StringBuilder();
         File f = new File(dataDirectory, "patchlist.hs");
-        if (!f.exists()){
-            f.createNewFile();
+        List<String> list;
+        try {
+            if (!f.exists()) {
+                if(!f.createNewFile()){
+                    throw new IOException();
+                }
+            }
+            list = Files.readAllLines(f.toPath());
+        }catch (IOException e){
+            e.printStackTrace();
+            return "[]";
         }
-        List<String> list = Files.readAllLines(f.toPath());
         sb.append("[");
         for (String s: list){
             sb.append(s).append(",");
@@ -131,9 +165,27 @@ public class FileManager {
         sb.substring(0, sb.length()-2);
         sb.append("]");
         return sb.toString();
+
     }
 
-    private List<String> getDiffs(){
+    public void accept(@NotNull String PatchId, @NotNull String unifiedPatch)throws IOException, PatchFailedException{
+        addUpdate(PatchId);
+
+        String path = FileSynck.getFilesPath(unifiedPatch);
+        File f = new File(saveDirectory, path);
+
+        List<String> original = Files.readAllLines(f.toPath());
+
+        List<String> patchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
+
+        Patch<String> patch = UnifiedDiffUtils.parseUnifiedDiff(patchList);
+
+        List<String> result = DiffUtils.patch(original,patch);
+
+        Files.write(new File(path).toPath(), result, Charset.defaultCharset());
+    }
+
+    public List<String> getPatch(){
         ArrayList<File> newFiles = getAllFiles(storageDirectory);
         ArrayList<String> patches = new ArrayList<>();
 
