@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class FileSynck {
     private final FileManager fileManager;
@@ -33,8 +34,16 @@ public class FileSynck {
 
     static String getFilesPath(String content) {
         String[] lines = content.split(System.lineSeparator());
-        String newFilePath = lines[1].split("[+]{3}")[1];
-        return newFilePath;
+        return lines[1].split("[+]{3}")[1];
+    }
+
+    public void setOnUpdate(Consumer<Void> onFileModifiedCallback) {
+        ch.on("updates", updates -> {
+            JSONObject updatesResponse = updates.getResponse();
+            applyServerUpdates(updatesResponse);
+            onFileModifiedCallback.accept(null);
+            return null;
+        });
     }
 
     public void joinSynckChannel(@NotNull Consumer<String> successConsumer, @NotNull Consumer<String> errorConsumer) {
@@ -107,4 +116,6 @@ public class FileSynck {
         payload.accumulate("rank", rank).accumulate("instructions", instruction);
         return payload;
     }
+
+
 }
