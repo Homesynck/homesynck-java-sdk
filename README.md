@@ -28,16 +28,18 @@ You can also check [this website](https://mvnrepository.com/artifact/com.github.
 
 The server address is set to default on our servers. If you self-host the server, you can change the server address by using the following code :
 ```java
-com.github.homesynck.utils.Connection.setHost("ws://example.com/socket");   // without https server
-com.github.homesynck.utils.Connection.setHost("wss://example.com/socket");  // with https server
+com.github.homesynck.connect.Connection.setHost("ws://example.com/socket");   // without https server
+com.github.homesynck.connect.Connection.setHost("wss://example.com/socket");  // with https server
 ```
 
 ### Authentication
 
 To register, first you will need to send your phone number to the server in order to avoid fake account creation. One phone number can only create one account every thirty days. Then, a token will be sent to the user on their mobile. You can now register to the server by using the register method.
 Here is an example:
+
 ```java
-import com.github.homesynck.accounts.Session;
+import com.github.homesynck.connect.Session;
+
 import java.util.Scanner;
 
 public class Register {
@@ -52,13 +54,13 @@ public class Register {
         }); // this is the block which will be called when there is an error while trying to register
     }
 
-    public static void register(Session session){
+    public static void register(Session session) {
 
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter the token sent by sms : ");
         String token = sc.next();
 
-        session.register("John doe", "I<3AgeOfEmpires", token , response -> {
+        session.register("John doe", "I<3AgeOfEmpires", token, response -> {
             System.out.println("You are now connected !");
 
             // you can continue your application from here
