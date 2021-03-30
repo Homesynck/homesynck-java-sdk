@@ -32,8 +32,8 @@ public class FileManager {
             saveDirectory.mkdirs();
         }
         this.dataDirectory = new File(storageFile, ".data/");
-        if (!saveDirectory.exists()) {
-            saveDirectory.mkdirs();
+        if (!dataDirectory.exists()) {
+            dataDirectory.mkdirs();
         }
     }
 
@@ -73,6 +73,10 @@ public class FileManager {
      *                      or the text cannot be encoded using the specified charset
      */
     public void editFile(@NotNull String stringPath, @NotNull String content) throws IOException {
+        File f = new File(storageDirectory, stringPath);
+        f = f.getParentFile();
+        f = new File(f, "/");
+        f.mkdirs();
         Path out = Paths.get(storageDirectory.getPath() + stringPath);
         List<String> contentList = new ArrayList<>(Arrays.asList(content.split(System.lineSeparator())));
         Files.write(out, contentList, Charset.defaultCharset());
@@ -156,13 +160,29 @@ public class FileManager {
         }
     }
 
-    void applyPatch(@NotNull String patchId, @NotNull String path, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
+    void applyPatch(@NotNull int patchId, @NotNull String path, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
         addUpdate(patchId);
+
         List<String> unifiedPatchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
         Patch<String> patch = UnifiedDiffUtils.parseUnifiedDiff(unifiedPatchList);
 
+        File storedFile = new File(path);
+
+        path = path.substring(storageDirectory.getPath().length());
         File saveFile = new File(saveDirectory, path);
-        File storedFile = new File(storageDirectory, path);
+
+        File saveParent = saveFile.getParentFile();
+        if (!saveParent.exists()){
+            saveParent.mkdirs();
+        }
+        if (!saveFile.exists()){
+            saveFile.createNewFile();
+        }
+
+        File storedParent = storedFile.getParentFile();
+        if (!storedParent.exists()){
+            storedParent.mkdirs();
+        }
 
         List<String> file = Files.readAllLines(saveFile.toPath());
 
@@ -172,13 +192,14 @@ public class FileManager {
         Files.write(storedFile.toPath(), result, Charset.defaultCharset());
     }
 
-    private void addUpdate(String patchId) {
+    private void addUpdate(int patchId) {
         File patchFile = new File(dataDirectory, "patchList.hs");
         try {
             List<String> updateList = Files.readAllLines(patchFile.toPath());
 
-            if (!updateList.contains(patchId)) {
-                updateList.add(patchId);
+            String patchString = String.valueOf(patchId);
+            if (!updateList.contains(patchString)) {
+                updateList.add(patchString);
             }
 
             Files.write(patchFile.toPath(), updateList, Charset.defaultCharset());
@@ -202,38 +223,47 @@ public class FileManager {
         }
     }
 
-    String getListUpdate() {
+    List<Integer> getListUpdate() {
         StringBuilder sb = new StringBuilder();
         File f = new File(dataDirectory, "patchlist.hs");
         List<String> list;
         try {
             if (!f.exists()) {
-                if (!f.createNewFile()) {
-                    throw new IOException();
-                }
+                f.createNewFile();
+                return new ArrayList<>();
             }
             list = Files.readAllLines(f.toPath());
+            List<Integer> intList = new ArrayList<>();
+            for(String s:list){
+                intList.add(Integer.parseInt(s));
+            }
+
+            return intList;
         } catch (IOException e) {
             e.printStackTrace();
-            return "[]";
+            return new ArrayList<>();
         }
-        sb.append("[");
-        for (String s : list) {
-            sb.append(s).append(",");
-        }
-        sb.substring(0, sb.length() - 2);
-        sb.append("]");
-        return sb.toString();
-
     }
 
-    void accept(@NotNull String PatchId, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
+    void accept(@NotNull int PatchId, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
         addUpdate(PatchId);
 
         String path = FileSynck.getFilesPath(unifiedPatch);
+
+        path = path.substring(storageDirectory.getPath().length()+1);
+
+        File saveFile = new File(saveDirectory, path);
+        saveFile = saveFile.getParentFile();
+        saveFile.mkdirs();
+
         File f = new File(saveDirectory, path);
 
-        List<String> original = Files.readAllLines(f.toPath());
+        List<String> original;
+        if (f.exists()) {
+            original = Files.readAllLines(f.toPath());
+        }else {
+            original = new ArrayList<>();
+        }
 
         List<String> patchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
 
@@ -241,7 +271,7 @@ public class FileManager {
 
         List<String> result = DiffUtils.patch(original, patch);
 
-        Files.write(new File(path).toPath(), result, Charset.defaultCharset());
+        Files.write(f.toPath(), result, Charset.defaultCharset());
     }
 
     public List<String> getPatch() {
@@ -249,7 +279,7 @@ public class FileManager {
         ArrayList<String> patches = new ArrayList<>();
 
         for (File f : newFiles) {
-            String abstractPath = f.getPath().substring(saveDirectory.getPath().length());
+            String abstractPath = f.getPath().substring(storageDirectory.getPath().length());
             File save = new File(saveDirectory, abstractPath);
             if (save.exists()) {
                 try {
