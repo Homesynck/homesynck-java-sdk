@@ -17,12 +17,18 @@ public class FileSynck {
     private final Channel ch;
     private final Socket socket;
     private boolean hasError;
+    private boolean hasSynced;
+    private boolean hasNotFinish;
+    private boolean hasNotPushed;
 
     public FileSynck(@NotNull FileManager fileManager, @NotNull String password) {
         this.fileManager = fileManager;
         String topic = "sync:" + Connection.getDirectoryId();
         this.socket = Connection.getSocket();
         hasError = false;
+        hasSynced = false;
+        hasNotFinish = true;
+        hasNotPushed = true;
 
         JSONObject channelParams = new JSONObject();
         channelParams.accumulate("auth_token", Connection.getAuth_token());
@@ -30,7 +36,6 @@ public class FileSynck {
         channelParams.accumulate("directory_password", password);
         channelParams.accumulate("received_updates", fileManager.getListUpdate());
         // TODO check if there's a problem with channel params
-
 
         this.ch = socket.channel(topic, channelParams);
     }
@@ -47,38 +52,52 @@ public class FileSynck {
         ch.on("updates", updates -> {
             JSONObject updatesResponse = updates.getResponse();
             applyServerUpdates(updatesResponse);
+            System.out.println("After apply");
+            if(!hasSynced){
+                System.out.println("sync update");
+                while(hasNotFinish) {
+                    joinSynckOnUpdate((success) -> {}, System.err::println);
+                }
+                hasNotPushed = true;
+
+                System.out.println("after sync declaration");
+                hasSynced = true;
+            }
+            System.out.println("on end ");
+
             onFileModifiedCallback.accept(null);
             return null;
         });
     }
 
-    public void joinSynckChannel(@NotNull Consumer<String> successConsumer, @NotNull Consumer<String> errorConsumer) {
-
-        ch.join(socket.getOpts().getTimeout());
-
-        int beginnerPatchId = fileManager.getPatchId();
+    public void joinSynckOnUpdate(Consumer<String> successConsumer, Consumer<String> errorConsumer) {
 
         List<String> patches = fileManager.getPatch();
+        System.out.println("Patches: " + patches);
 
         if (!patches.isEmpty()) {
             System.out.println("There's some patches");
             for (String patch : patches) {
                 System.out.println("Before push update");
                 hasError = false;
-                pushUpdate(beginnerPatchId++, patch, (thread) -> notify(), (error) -> {hasError = true; notify();});
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                while(hasNotPushed)
+                    pushUpdate(fileManager.getPatchId(), patch, (thread) -> {}, (error) -> hasError = true);
+
                 if(hasError) {
                     errorConsumer.accept("There was an error while we trying to push!");
+                    hasNotFinish = false;
                     return;
                 }
             }
         }
-
+        hasNotFinish = false;
         successConsumer.accept("All is good");
+
+    }
+
+    public void joinSynckChannel() {
+
+        ch.join(socket.getOpts().getTimeout());
     }
 
     private void applyServerUpdates(JSONObject updates) {
@@ -126,6 +145,7 @@ public class FileSynck {
                     return null;
                 }
         );
+        hasNotPushed = false;
     }
 
     public void pushUpdate(@NotNull Consumer<String> successConsumer, @NotNull Consumer<String> errorConsumer) {
@@ -140,16 +160,12 @@ public class FileSynck {
                 System.out.println("one");
                 hasError = false;
                 System.out.println("two");
-                pushUpdate(patchId, patch, (thread) -> notify(), (error) -> {hasError = true; notify();});
-                // TODO il se stop ici
-                try {
-                    System.out.println("Hey");
-                    wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    System.out.println(e.getMessage());
+                while(hasNotPushed) {
+                    pushUpdate(++patchId, patch, (thread) -> {
+                    }, (error) -> hasError = true);
                 }
-                System.out.println("Hey");
+                hasNotPushed = true;
+                System.out.println("Update pushed");
                 if(hasError) {
                     errorConsumer.accept("There was an error while we trying to push!");
                     return;
