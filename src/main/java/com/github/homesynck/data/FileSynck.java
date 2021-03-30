@@ -9,7 +9,6 @@ import com.github.openjson.JSONObject;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,11 +16,13 @@ public class FileSynck {
     private final FileManager fileManager;
     private final Channel ch;
     private final Socket socket;
+    private boolean hasError;
 
     public FileSynck(@NotNull FileManager fileManager, @NotNull String password) {
         this.fileManager = fileManager;
         String topic = "sync:" + Connection.getDirectoryId();
         this.socket = Connection.getSocket();
+        hasError = false;
 
         JSONObject channelParams = new JSONObject();
         channelParams.accumulate("auth_token", Connection.getAuth_token());
@@ -62,9 +63,21 @@ public class FileSynck {
         if (!patches.isEmpty()) {
             for (String patch : patches) {
                 System.out.println("Before push update");
-                pushUpdate(beginnerPatchId++, patch, successConsumer, errorConsumer);
+                hasError = false;
+                pushUpdate(beginnerPatchId++, patch, (thread) -> notify(), (error) -> {hasError = true; notify();});
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if(hasError) {
+                    errorConsumer.accept("There was an error while we trying to push!");
+                    return;
+                }
             }
         }
+
+        successConsumer.accept("All is good");
     }
 
     private void applyServerUpdates(JSONObject updates) {
@@ -87,7 +100,6 @@ public class FileSynck {
 
     private void pushUpdate(int rank, String patch, Consumer<String> successConsumer
             , Consumer<String> errorConsumer) {
-
         JSONObject payload = initPushChannel(rank, patch);
         System.out.println("call Push update");
         ch.push("push_update", payload, socket.getOpts().getTimeout())
