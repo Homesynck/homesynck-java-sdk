@@ -9,9 +9,9 @@ import com.github.openjson.JSONObject;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class FileSynck {
     private final FileManager fileManager;
@@ -24,17 +24,22 @@ public class FileSynck {
         this.socket = Connection.getSocket();
 
         JSONObject channelParams = new JSONObject();
-        channelParams.accumulate("auth_token", Connection.getAuth_token())
-                .accumulate("user_id", Connection.getUser_id())
-                .accumulate("directory_password", password)
-                .accumulate("received-updates", fileManager.getListUpdate());
+        channelParams.accumulate("auth_token", Connection.getAuth_token());
+        channelParams.accumulate("user_id", Connection.getUser_id());
+        channelParams.accumulate("directory_password", password);
+        channelParams.accumulate("received_updates", fileManager.getListUpdate());
+        // TODO check if there's a problem with channel params
+
 
         this.ch = socket.channel(topic, channelParams);
     }
 
     static String getFilesPath(String content) {
         String[] lines = content.split(System.lineSeparator());
-        return lines[1].split("[+]{3}")[1];
+        String[] items =  lines[1].split("[+]{3}");
+        if(items.length == 2)
+            return items[1].trim();
+        return "";
     }
 
     public void setOnUpdate(Consumer<Void> onFileModifiedCallback) {
@@ -50,30 +55,28 @@ public class FileSynck {
 
         ch.join(socket.getOpts().getTimeout());
 
-        ch.push("join", new JSONObject(), socket.getOpts().getTimeout())
-                .receive("updates", updates -> {
-                    int beginnerPatchId = fileManager.getPatchId();
-                    applyServerUpdates(updates);
-                    List<String> patches = fileManager.getPatch();
-                    if (!patches.isEmpty())
-                        for (String patch : patches)
-                            pushUpdate(String.valueOf(beginnerPatchId++), patch,
-                                    successConsumer, errorConsumer);
-                    return null;
-                }).receive("error", error -> {
-                    errorConsumer.accept(error.getString("error"));
-                    return null;
-                }
-        );
+        int beginnerPatchId = fileManager.getPatchId();
+
+        List<String> patches = fileManager.getPatch();
+
+        if (!patches.isEmpty()) {
+            for (String patch : patches) {
+                System.out.println("Before push update");
+                pushUpdate(beginnerPatchId++, patch, successConsumer, errorConsumer);
+            }
+        }
     }
 
     private void applyServerUpdates(JSONObject updates) {
         JSONArray updatesObjects = updates.getJSONArray("updates");
         int nbUpdates = updatesObjects.length();
+        System.out.println(updatesObjects.toString());
+        System.out.println(nbUpdates);
         for (int i = 0; i < nbUpdates; ++i) {
-            String json = updatesObjects.optString(i);
+            JSONObject updateObject =  updatesObjects.getJSONObject((i));
+            String json = updateObject.getString("instructions");
             String fileName = getFilesPath(json);
-            String patchId = updates.getString("rank");
+            int patchId = updateObject.getInt("rank");
             try {
                 fileManager.applyPatch(patchId, fileName, json);
             } catch (IOException | PatchFailedException e) {
@@ -82,17 +85,21 @@ public class FileSynck {
         }
     }
 
-    private void pushUpdate(String rank, String patch, Consumer<String> successConsumer
+    private void pushUpdate(int rank, String patch, Consumer<String> successConsumer
             , Consumer<String> errorConsumer) {
 
         JSONObject payload = initPushChannel(rank, patch);
+        System.out.println("call Push update");
         ch.push("push_update", payload, socket.getOpts().getTimeout())
                 .receive("ok", success -> {
                     try {
                         fileManager.accept(rank, patch);
                         successConsumer.accept("Update sent successfully ");
-                    } catch (IOException | PatchFailedException e) {
+                    } catch (IOException e) {
                         errorConsumer.accept("There was an error while we trying to sync on your device");
+                        e.printStackTrace();
+                    }catch (PatchFailedException e){
+                        errorConsumer.accept("Patch can't be apply");
                     }
                     return null;
                 }).receive("error", error -> {
@@ -110,17 +117,18 @@ public class FileSynck {
 
         if(!patches.isEmpty()) {
             for(String patch: patches) {
-                pushUpdate(String.valueOf(patchId++), patch,
+                pushUpdate(++patchId, patch,
                         successConsumer, errorConsumer);
             }
         }
     }
 
-    private JSONObject initPushChannel(String rank, String instruction) {
+    private JSONObject initPushChannel(int rank, String instruction) {
         ch.join(socket.getOpts().getTimeout());
 
         JSONObject payload = new JSONObject();
         payload.accumulate("rank", rank).accumulate("instructions", instruction);
+        System.out.println(payload);
         return payload;
     }
 
