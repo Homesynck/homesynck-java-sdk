@@ -80,8 +80,7 @@ public class FileSynck {
             for (String patch : patches) {
                 System.out.println("Before push update");
                 hasError = false;
-                while(hasNotPushed)
-                    pushUpdate(fileManager.getPatchId(), patch, (thread) -> {}, (error) -> hasError = true);
+                pushUpdate(fileManager.getPatchId()+1, patch, (thread) -> {}, (error) -> hasError = true);
 
                 if(hasError) {
                     errorConsumer.accept("There was an error while we trying to push!");
@@ -95,9 +94,15 @@ public class FileSynck {
 
     }
 
-    public void joinSynckChannel() {
+    public void joinSynckChannel(Consumer<String> successConsumer, Consumer<String> errorConsumer) {
 
-        ch.join(socket.getOpts().getTimeout());
+        ch.join(socket.getOpts().getTimeout()).receive("ok", msg -> {
+            successConsumer.accept("Channel joined");
+            return null;
+        }).receive("error", msg -> {
+            errorConsumer.accept(msg.getString("reason"));
+            return null;
+        });
     }
 
     private void applyServerUpdates(JSONObject updates) {
@@ -123,29 +128,31 @@ public class FileSynck {
 
         JSONObject payload = new JSONObject();
         payload.accumulate("rank", rank).accumulate("instructions", patch);
-        System.out.println(payload);
 
         System.out.println("Push payload: " + payload);
-        ch.push("push_update", payload, socket.getOpts().getTimeout())
-                .receive("ok", success -> {
-                    try {
-                        System.out.println("Receiving from server");
-                        fileManager.accept(rank, patch);
-                        System.out.println("All is good for accept method");
-                        successConsumer.accept("Update sent successfully ");
-                    } catch (IOException e) {
-                        errorConsumer.accept("There was an error while we trying to sync on your device");
-                        e.printStackTrace();
-                    }catch (PatchFailedException e){
-                        errorConsumer.accept("Patch can't be apply");
-                    }
-                    return null;
-                }).receive("error", error -> {
-                    errorConsumer.accept(error.getString("error"));
-                    return null;
+        ch.push("push_update", payload, socket.getOpts().getTimeout()).receive("ok", success -> {
+                System.out.println("We received a message");
+                try {
+                    System.out.println("Receiving from server");
+                    fileManager.accept(rank, patch);
+                    System.out.println("All is good for accept method");
+                    hasNotPushed = false;
+                    successConsumer.accept("Update sent successfully ");
+                } catch (IOException e) {
+                    errorConsumer.accept("There was an error while we trying to sync on your device");
+                    e.printStackTrace();
+                }catch (PatchFailedException e){
+                    System.out.println("Patch failed");
+                    errorConsumer.accept("Patch can't be apply");
                 }
+                return null;
+            }).receive("error", error -> {
+                System.out.println("There is an error");
+                hasNotPushed = false;
+                errorConsumer.accept(error.getString("error"));
+                return null;
+            }
         );
-        hasNotPushed = false;
     }
 
     public void pushUpdate(@NotNull Consumer<String> successConsumer, @NotNull Consumer<String> errorConsumer) {
@@ -154,16 +161,14 @@ public class FileSynck {
         int patchId = fileManager.getPatchId();
         if(patchId == 0) patchId++;
 
+        System.out.println("patches: " + patches);
         if(!patches.isEmpty()) {
-            System.out.println("patches");
             for(String patch: patches) {
                 System.out.println("one");
                 hasError = false;
                 System.out.println("two");
-                while(hasNotPushed) {
-                    pushUpdate(++patchId, patch, (thread) -> {
-                    }, (error) -> hasError = true);
-                }
+                pushUpdate(++patchId, patch, (thread) -> {
+                }, (error) -> hasError = true);
                 hasNotPushed = true;
                 System.out.println("Update pushed");
                 if(hasError) {
