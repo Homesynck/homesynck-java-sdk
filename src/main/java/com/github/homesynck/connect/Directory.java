@@ -2,11 +2,19 @@ package com.github.homesynck.connect;
 
 import ch.kuon.phoenix.Channel;
 import ch.kuon.phoenix.Socket;
+import com.github.homesynck.Response;
 import com.github.openjson.JSONObject;
 
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 public class Directory {
+
+
+
     private static final String topic = "directories:lobby";
 
     /**
@@ -17,13 +25,9 @@ public class Directory {
      * @param description     Description of the new directory
      * @param thumbnailUrl    The thumbnail url of the new directory
      * @param password        user password for the new Directory
-     * @param successConsumer Consumer called when the directory is correctly
-     * @param errorConsumer   Consumer called when the server return an error
      */
-    public static void createSecured(String name, String description, String thumbnailUrl, String password,
-                                     Consumer<String> successConsumer, Consumer<String> errorConsumer) {
+    public static Response createSecured(String name, String description, String thumbnailUrl, String password) {
         Socket socket = Connection.getSocket();
-
         JSONObject channelParams = new JSONObject();
         channelParams.accumulate("auth_token", Connection.getAuth_token())
                 .accumulate("user_id", Integer.parseInt(Connection.getUser_id()));
@@ -32,21 +36,37 @@ public class Directory {
 
         ch.join(socket.getOpts().getTimeout());
 
-        JSONObject createdJson = new JSONObject();
-        createdJson.accumulate("name", name)
+        JSONObject params = new JSONObject();
+        params.accumulate("name", name)
                 .accumulate("description", description)
                 .accumulate("thumbnail_url", thumbnailUrl)
                 .accumulate("is_secured", !password.isEmpty())
                 .accumulate("password", password);
 
-        ch.push("create", createdJson, socket.getOpts().getTimeout()).receive("ok", msg -> {
+        try {
+            String response = getDirectory(ch, socket, params, "create").get();
+            return new Response(true, response);
+        } catch (InterruptedException | ExecutionException e) {
+            return new Response(false, e.getMessage());
+        }
+    }
+
+    private static Future<String> getDirectory(Channel ch, Socket socket, JSONObject params, String event){
+        CompletableFuture<String> completableFuture = new CompletableFuture<String>();
+
+        ch.push(event, params, socket.getOpts().getTimeout()).receive("ok", msg -> {
             Connection.setDirectoryId(msg.getString("directory_id"));
-            successConsumer.accept(msg.getString("directory_id"));
+            completableFuture.complete(msg.getString("directory_id"));
             return null;
         }).receive("error", msg -> {
-            errorConsumer.accept(msg.getString("reason"));
+            completableFuture.obtrudeValue(msg.getString("reason"));
+            return null;
+        }).receive("timeout", msg -> {
+            completableFuture.obtrudeValue("Channel Timeout");
             return null;
         });
+
+        return completableFuture;
     }
 
     /**
@@ -55,19 +75,16 @@ public class Directory {
      * @param name            Name of the directory
      * @param description     Description of the new directory
      * @param thumbnail       The thumbnail url of the new directory
-     * @param successConsumer Consumer called when the directory is correctly
-     * @param errorConsumer   Consumer called when the server return an error
      */
-    public static void create(String name, String description, String thumbnail,
-                              Consumer<String> successConsumer, Consumer<String> errorConsumer) {
-        createSecured(name, description, thumbnail, "", successConsumer, errorConsumer);
+    public static Response create(String name, String description, String thumbnail) {
+        return createSecured(name, description, thumbnail, "");
     }
 
-    public static void openSecured(String name, String password, Consumer<String> successConsumer, Consumer<String> errorConsumer) {
-        createSecured(name, "", "", password, successConsumer, errorConsumer);
+    public static Response openSecured(String name, String password) {
+        return createSecured(name, "", "", password);
     }
 
-    public static void open(String name, Consumer<String> successConsumer, Consumer<String> errorConsumer) {
-        openSecured(name, "", successConsumer, errorConsumer);
+    public static Response open(String name) {
+        return openSecured(name, "");
     }
 }

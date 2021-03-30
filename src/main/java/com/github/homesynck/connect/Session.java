@@ -2,9 +2,14 @@ package com.github.homesynck.connect;
 
 import ch.kuon.phoenix.Channel;
 import ch.kuon.phoenix.Socket;
+import com.github.homesynck.Response;
 import com.github.openjson.JSONObject;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 
@@ -50,17 +55,12 @@ public class Session {
 
     /**
      * Allow user to register to the server.
-     *
-     * @param username        username of the new user
+     *  @param username        username of the new user
      * @param password        password of the new user
      * @param token           the token for the new user
-     * @param successConsumer Consumer that receive a array with the auth_token and the user_id when
-     *                        the register is successful
-     * @param errorConsumer   Consumer that receive the error from the server when the registration
-     *                        fail
+     * @return
      */
-    public void register(String username, String password, String token,
-                         Consumer<String[]> successConsumer, Consumer<String> errorConsumer) {
+    public Response register(String username, String password, String token) {
         Socket socket;
 
         socket = Connection.getSocket();
@@ -74,7 +74,13 @@ public class Session {
                 .accumulate("login", username)
                 .accumulate("password", password);
 
-        connect(ch, socket, registerParams, "register", successConsumer, errorConsumer);
+        try {
+           String registerRes = connect(ch, socket, registerParams, "register").get();
+            return new Response(true, registerRes);
+        } catch (InterruptedException | ExecutionException e) {
+            return new Response(false, e.getMessage());
+
+        }
     }
 
     /**
@@ -82,14 +88,8 @@ public class Session {
      *
      * @param username        username of the user
      * @param password        password of the user
-     * @param successConsumer Consumer that receive a array with the auth_token and the user_id when
-     *                        the login is successful. The auth_token and the user_id are stored by the
-     *                        API and are just returned for information
-     * @param errorConsumer   Consumer that receive the error from the server when the login
-     *                        fail
      */
-    public void login(String username, String password,
-                      Consumer<String[]> successConsumer, Consumer<String> errorConsumer) {
+    public Response login(String username, String password) {
         Socket socket = Connection.getSocket();
 
         Channel ch = socket.channel("auth:lobby", new JSONObject());
@@ -100,21 +100,32 @@ public class Session {
         connectionParams.accumulate("login", username)
                 .accumulate("password", password);
 
-        connect(ch, socket, connectionParams, "login", successConsumer, errorConsumer);
+        try {
+            String loginRes = connect(ch, socket, connectionParams, "login").get();
+            return new Response(true, loginRes);
+        } catch (InterruptedException | ExecutionException e) {
+            return new Response(false, e.getMessage());
+        }
     }
 
-    private void connect(@NotNull Channel ch, @NotNull Socket socket, JSONObject params, String event,
-                         Consumer<String[]> successFunction, Consumer<String> errorFunction) {
+    public Future<String> connect(@NotNull ch.kuon.phoenix.Channel ch, @NotNull Socket socket, JSONObject params, String event) {
+        CompletableFuture<String> completableFuture = new CompletableFuture<>();
+
         ch.push(event, params, socket.getOpts().getTimeout()).receive("ok", msg -> {
             Connection.setUser_id(msg.getString("user_id"));
             Connection.setAuth_token(msg.getString("auth_token"));
             String[] str = new String[]{msg.getString("user_id"), msg.getString("auth_token")};
-            successFunction.accept(str);
+            completableFuture.complete(Arrays.toString(str));
             return null;
         }).receive("error", msg -> {
-            errorFunction.accept(msg.getString("reason"));
+            completableFuture.obtrudeValue(msg.getString("reason"));
+            return null;
+        }).receive("timeout", msg -> {
+            completableFuture.obtrudeValue("Channel timeout");
             return null;
         });
+
+        return completableFuture;
     }
 
     /**
@@ -122,10 +133,8 @@ public class Session {
      * a new user.
      *
      * @param phoneNumber     phone number of the new user
-     * @param successConsumer Consumer called when the phone is send to the server
-     * @param errorConsumer   Consumer called if the server return an error
      */
-    public void phoneValidation(String phoneNumber, Consumer<String> successConsumer, Consumer<String> errorConsumer) {
+    public Response phoneValidation(String phoneNumber) {
         Socket socket = Connection.getSocket();
 
         Channel ch = socket.channel("auth:lobby", new JSONObject());
@@ -136,14 +145,30 @@ public class Session {
         jsonObject.accumulate("phone", phoneNumber);
 
         this.phone = false;
-        Object u;
-        ch.push("validate_phone", jsonObject, socket.getOpts().getTimeout()).receive("ok", msg -> {
+
+        try {
+            String validPhone = pushPhoneValidation(ch, socket, jsonObject).get();
+            return new Response(true, validPhone);
+        } catch (InterruptedException | ExecutionException e) {
+            return new Response(false, e.getMessage());
+        }
+    }
+
+    public Future<String> pushPhoneValidation(@NotNull ch.kuon.phoenix.Channel ch, @NotNull Socket socket, JSONObject params) {
+        CompletableFuture<String> completableFuture = new CompletableFuture<>();
+
+        ch.push("validate_phone", params, socket.getOpts().getTimeout()).receive("ok", msg -> {
             this.phone = true;
-            successConsumer.accept("");
+            completableFuture.complete("");
             return null;
         }).receive("error", msg -> {
-            errorConsumer.accept(msg.getString("reason"));
+            completableFuture.obtrudeValue(msg.getString("reason"));
+            return null;
+        }).receive("timeout", msg -> {
+            completableFuture.obtrudeValue("Channel timeout");
             return null;
         });
+
+        return completableFuture;
     }
 }
