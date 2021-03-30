@@ -61,6 +61,7 @@ public class FileSynck {
         List<String> patches = fileManager.getPatch();
 
         if (!patches.isEmpty()) {
+            System.out.println("There's some patches");
             for (String patch : patches) {
                 System.out.println("Before push update");
                 hasError = false;
@@ -100,12 +101,18 @@ public class FileSynck {
 
     private void pushUpdate(int rank, String patch, Consumer<String> successConsumer
             , Consumer<String> errorConsumer) {
-        JSONObject payload = initPushChannel(rank, patch);
-        System.out.println("call Push update");
+
+        JSONObject payload = new JSONObject();
+        payload.accumulate("rank", rank).accumulate("instructions", patch);
+        System.out.println(payload);
+
+        System.out.println("Push payload: " + payload);
         ch.push("push_update", payload, socket.getOpts().getTimeout())
                 .receive("ok", success -> {
                     try {
+                        System.out.println("Receiving from server");
                         fileManager.accept(rank, patch);
+                        System.out.println("All is good for accept method");
                         successConsumer.accept("Update sent successfully ");
                     } catch (IOException e) {
                         errorConsumer.accept("There was an error while we trying to sync on your device");
@@ -122,21 +129,38 @@ public class FileSynck {
     }
 
     public void pushUpdate(@NotNull Consumer<String> successConsumer, @NotNull Consumer<String> errorConsumer) {
-
+        System.out.println("call Push update");
         List<String> patches = fileManager.getPatch();
         int patchId = fileManager.getPatchId();
         if(patchId == 0) patchId++;
 
         if(!patches.isEmpty()) {
+            System.out.println("patches");
             for(String patch: patches) {
-                pushUpdate(++patchId, patch,
-                        successConsumer, errorConsumer);
+                System.out.println("one");
+                hasError = false;
+                System.out.println("two");
+                pushUpdate(patchId, patch, (thread) -> notify(), (error) -> {hasError = true; notify();});
+                // TODO il se stop ici
+                try {
+                    System.out.println("Hey");
+                    wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                }
+                System.out.println("Hey");
+                if(hasError) {
+                    errorConsumer.accept("There was an error while we trying to push!");
+                    return;
+                }
             }
+            System.out.println("end of pushes");
         }
+        successConsumer.accept("All is good");
     }
 
     private JSONObject initPushChannel(int rank, String instruction) {
-        ch.join(socket.getOpts().getTimeout());
 
         JSONObject payload = new JSONObject();
         payload.accumulate("rank", rank).accumulate("instructions", instruction);
