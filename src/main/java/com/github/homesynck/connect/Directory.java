@@ -26,7 +26,7 @@ public class Directory {
 
         JSONObject channelParams = new JSONObject();
         channelParams.accumulate("auth_token", Connection.getAuth_token())
-                .accumulate("user_id", Connection.getUser_id());
+                .accumulate("user_id", Integer.parseInt(Connection.getUser_id()));
 
         Channel ch = socket.channel(topic, channelParams);
 
