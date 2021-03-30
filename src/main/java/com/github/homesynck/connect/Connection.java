@@ -54,9 +54,6 @@ public class Connection {
 
         Socket.Options opts = new Socket.Options();
         opts.setTimeout(5000);
-        opts.setHeartbeatIntervalMs(100000);
-        opts.setRejoinAfterMs((tries) -> tries * 500);
-        opts.setReconnectAfterMs((tries) -> tries * 500);
         opts.setLogger((tag, msg) ->
         {
             System.out.println(tag + " " + msg);
