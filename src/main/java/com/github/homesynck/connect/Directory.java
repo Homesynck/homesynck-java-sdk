@@ -11,10 +11,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+/**
+ * Class to connect to the Directory on the Homesynck server.
+ */
 public class Directory {
-
-
-
     private static final String topic = "directories:lobby";
 
     /**
@@ -81,10 +81,24 @@ public class Directory {
         return createSecured(name, description, thumbnail, "");
     }
 
+    /**
+     * open a directory secured with a password on the server.
+     * It can create the directory if the directory does not exist.
+     *
+     * @param name      The name of the directory
+     * @param password  the password of the directory
+     * @return          Callback if successful
+     */
     public static Response openSecured(String name, String password) {
         return createSecured(name, "", "", password);
     }
 
+    /**
+     * open a directory on the server. It can create the directory if the directory does not exist.
+     *
+     * @param name  The name of the directory
+     * @return      Callback if successful
+     */
     public static Response open(String name) {
         return openSecured(name, "");
     }
