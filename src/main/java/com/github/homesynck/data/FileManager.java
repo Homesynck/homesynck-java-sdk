@@ -125,38 +125,32 @@ public class FileManager {
      * Delete the file specified with the path
      *
      * @param stringPath        path of the file that will be deleted
-     * @throws FileException    if here is an error with the file deletion
      */
-    public void deleteFile(@NotNull String stringPath) throws FileException {
-        File f = new File(storageDirectory, stringPath);
-        boolean isDelete = f.delete();
+    public void deleteFile(@NotNull String stringPath) {
 
-        if (!isDelete) {
-            throw new FileException("The file can't be deleted");
-        }
+        File deletedFiles = new File(dataDirectory, "deletedFiles.hs");
 
-        File del = new File(dataDirectory, "/delete.hs");
-
-        List<String> deletedFiles;
-        if (!del.exists()) {
+        File file = new File(storageDirectory, stringPath);
+        if (!deletedFiles.exists()){
             try {
-                del.createNewFile();
+                deletedFiles.createNewFile();
             } catch (IOException e) {
-                throw new FileException("File can't be created.");
-            }
-            deletedFiles = new ArrayList<>();
-        } else {
-            try {
-                deletedFiles = Files.readAllLines(del.toPath());
-            } catch (IOException e) {
-                throw new FileException("File can't be read");
+                e.printStackTrace();
             }
         }
-        deletedFiles.add(f.getPath());
+
         try {
-            Files.write(f.toPath(), deletedFiles, Charset.defaultCharset());
+            List<String> deletedPaths = Files.readAllLines(deletedFiles.toPath());
+
+            deletedPaths.add(file.getPath());
+
+            Files.write(deletedFiles.toPath(),deletedPaths, Charset.defaultCharset());
         } catch (IOException e) {
-            throw new FileException("File can't be write");
+            e.printStackTrace();
+        }
+
+        if (file.delete()){
+            file.delete();
         }
     }
 
@@ -164,12 +158,22 @@ public class FileManager {
         addUpdate(patchId);
 
         List<String> unifiedPatchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
-        Patch<String> patch = UnifiedDiffUtils.parseUnifiedDiff(unifiedPatchList);
+
+        String firstLine = unifiedPatchList.get(0);
 
         File storedFile = new File(path);
 
         path = path.substring(storageDirectory.getPath().length());
         File saveFile = new File(saveDirectory, path);
+
+        System.out.println(firstLine);
+        if (firstLine.trim().startsWith("del")){
+            storedFile.delete();
+            saveFile.delete();
+            return;
+        }
+
+        Patch<String> patch = UnifiedDiffUtils.parseUnifiedDiff(unifiedPatchList);
 
         File saveParent = saveFile.getParentFile();
         if (!saveParent.exists()){
@@ -245,38 +249,26 @@ public class FileManager {
         }
     }
 
-    void accept(@NotNull int PatchId, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
-        addUpdate(PatchId);
-
-        String path = FileSynck.getFilesPath(unifiedPatch);
-
-        path = path.substring(storageDirectory.getPath().length()+1);
-
-        File saveFile = new File(saveDirectory, path);
-        saveFile = saveFile.getParentFile();
-        saveFile.mkdirs();
-
-        File f = new File(saveDirectory, path);
-
-        List<String> original;
-        if (f.exists()) {
-            original = Files.readAllLines(f.toPath());
-        }else {
-            original = new ArrayList<>();
-        }
-
-        List<String> patchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
-
-        Patch<String> patch = UnifiedDiffUtils.parseUnifiedDiff(patchList);
-
-        List<String> result = DiffUtils.patch(original, patch);
-
-        Files.write(f.toPath(), result, Charset.defaultCharset());
-    }
-
-    public List<String> getPatch() {
+    List<String> getPatch() {
         ArrayList<File> newFiles = getAllFiles(storageDirectory);
         ArrayList<String> patches = new ArrayList<>();
+
+        File deletedFile = new File(dataDirectory, "deletedFiles.hs");
+        try {
+            if (deletedFile.exists()) {
+                List<String> deletedList = Files.readAllLines(deletedFile.toPath());
+                for (String s : deletedList) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("del").append(System.lineSeparator());
+                    sb.append("+++").append(Optional.ofNullable(s).orElse("/dev/null"));
+                    patches.add(sb.toString());
+                }
+                deletedFile.delete();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         for (File f : newFiles) {
             String abstractPath = f.getPath().substring(storageDirectory.getPath().length());
