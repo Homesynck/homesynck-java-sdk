@@ -2,11 +2,13 @@ package com.github.homesynck.connect;
 
 import ch.kuon.phoenix.Channel;
 import ch.kuon.phoenix.Socket;
+import com.github.homesynck.ExceptionParser;
 import com.github.homesynck.Response;
 import com.github.openjson.JSONObject;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -77,8 +79,9 @@ public class Session {
         try {
            String registerRes = connect(ch, socket, registerParams, "register").get();
             return new Response(true, registerRes);
-        } catch (InterruptedException | ExecutionException e) {
-            return new Response(false, e.getMessage());
+        } catch (InterruptedException | ExecutionException | CancellationException e) {
+            String message = ExceptionParser.parse(e.getMessage());
+            return new Response(false, message);
 
         }
     }
@@ -102,9 +105,11 @@ public class Session {
 
         try {
             String loginRes = connect(ch, socket, connectionParams, "login").get();
+            System.out.println("ici");
             return new Response(true, loginRes);
-        } catch (InterruptedException | ExecutionException e) {
-            return new Response(false, e.getMessage());
+        } catch (InterruptedException | ExecutionException | CancellationException e) {
+            String message = ExceptionParser.parse(e.getMessage());
+            return new Response(false, message);
         }
     }
 
@@ -118,10 +123,10 @@ public class Session {
             completableFuture.complete(Arrays.toString(str));
             return null;
         }).receive("error", msg -> {
-            completableFuture.obtrudeValue(msg.getString("reason"));
+            completableFuture.obtrudeException(new Exception(msg.getString("reason")));
             return null;
         }).receive("timeout", msg -> {
-            completableFuture.obtrudeValue("Channel timeout");
+            completableFuture.obtrudeException(new Exception("Channel timeout"));
             return null;
         });
 
@@ -149,8 +154,9 @@ public class Session {
         try {
             String validPhone = pushPhoneValidation(ch, socket, jsonObject).get();
             return new Response(true, validPhone);
-        } catch (InterruptedException | ExecutionException e) {
-            return new Response(false, e.getMessage());
+        } catch (InterruptedException | ExecutionException | CancellationException e) {
+            String message = ExceptionParser.parse(e.getMessage());
+            return new Response(false, message);
         }
     }
 
@@ -162,10 +168,10 @@ public class Session {
             completableFuture.complete("");
             return null;
         }).receive("error", msg -> {
-            completableFuture.obtrudeValue(msg.getString("reason"));
+            completableFuture.obtrudeException(new Exception(msg.getString("reason")));
             return null;
         }).receive("timeout", msg -> {
-            completableFuture.obtrudeValue("Channel timeout");
+            completableFuture.obtrudeException(new Exception("Channel timeout"));
             return null;
         });
 

@@ -2,9 +2,11 @@ package com.github.homesynck.connect;
 
 import ch.kuon.phoenix.Channel;
 import ch.kuon.phoenix.Socket;
+import com.github.homesynck.ExceptionParser;
 import com.github.homesynck.Response;
 import com.github.openjson.JSONObject;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -44,8 +46,9 @@ public class Directory {
         try {
             String response = getDirectory(ch, socket, params, "create").get();
             return new Response(true, response);
-        } catch (InterruptedException | ExecutionException e) {
-            return new Response(false, e.getMessage());
+        } catch (InterruptedException | ExecutionException | CancellationException e) {
+            String message = ExceptionParser.parse(e.getMessage());
+            return new Response(false, message);
         }
     }
 
@@ -57,10 +60,10 @@ public class Directory {
             completableFuture.complete(msg.getString("directory_id"));
             return null;
         }).receive("error", msg -> {
-            completableFuture.obtrudeValue(msg.getString("reason"));
+            completableFuture.obtrudeException(new Exception(msg.getString("reason")));
             return null;
         }).receive("timeout", msg -> {
-            completableFuture.obtrudeValue("Channel Timeout");
+            completableFuture.obtrudeException(new Exception("Channel Timeout"));
             return null;
         });
 

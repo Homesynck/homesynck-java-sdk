@@ -3,6 +3,7 @@ package com.github.homesynck.data;
 import ch.kuon.phoenix.Channel;
 import ch.kuon.phoenix.Socket;
 import com.github.difflib.patch.PatchFailedException;
+import com.github.homesynck.ExceptionParser;
 import com.github.homesynck.Response;
 import com.github.homesynck.connect.Connection;
 import com.github.openjson.JSONArray;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -29,17 +31,17 @@ public class FileSynck {
         this.password = password;
     }
 
-    public String startSyncing() {
+    public Response startSyncing() {
         try {
-            joinChannel().get();
-            return "All si good";
-        } catch (InterruptedException | ExecutionException e) {
-            return e.getMessage();
+            String res = joinChannel().get();
+            return new Response(true, res);
+        } catch (InterruptedException | ExecutionException | CancellationException e) {
+            String message = ExceptionParser.parse(e.getMessage());
+            return new Response(false, message);
         }
     }
 
-    // It will works
-    public void setOnUpdate(Consumer<Void> onFileModifiedCallback) {
+    public void setOnUpdate(@NotNull Consumer<Void> onFileModifiedCallback) {
         this.channel.on("updates", updates -> {
             JSONObject updatesResponse = updates.getResponse();
             applyServerUpdates(updatesResponse);
@@ -66,11 +68,11 @@ public class FileSynck {
                     return null;
                 })
                 .receive("error", error -> {
-                    completableFuture.obtrudeValue("Couldn't joined the " + topic + " channel");
+                    completableFuture.obtrudeException(new Exception("Couldn't joined the " + topic + " channel"));
                     return null;
                 })
                 .receive("timeout", timeout -> {
-                    completableFuture.obtrudeValue("Timeout on " + topic + " channel");
+                    completableFuture.obtrudeException(new Exception("Timeout on " + topic + " channel"));
                     return null;
                 });
 
@@ -85,10 +87,9 @@ public class FileSynck {
             try {
                 String pushResponse = pushInstruction(patch).get();
                 System.out.println("Push response: " + pushResponse);
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-                System.err.println("There was a problem on pushing: " + e.getMessage());
-                return new Response(false, "There was a problem on pushing: " + e.getMessage());
+            } catch (InterruptedException | ExecutionException | CancellationException e) {
+                String message = ExceptionParser.parse(e.getMessage());
+                return new Response(false, "There was a problem on pushing: " + message);
             }
         }
         return new Response(true, "All files pushed");
@@ -108,11 +109,11 @@ public class FileSynck {
                     return null;
                 })
                 .receive("error", error -> {
-                    completableFuture.obtrudeValue(error.getString("error"));
+                    completableFuture.obtrudeException(new Exception(error.getString("error")));
                     return null;
                 })
                 .receive("timeout", timeout -> {
-                    completableFuture.obtrudeValue("Timeout on push update event");
+                    completableFuture.obtrudeException(new Exception("Timeout on push update event"));
                     return null;
                 });
 
