@@ -34,39 +34,42 @@ com.github.homesynck.connect.Connection.setHost("wss://example.com/socket");  //
 
 ### Authentication
 
-To register, first you will need to send your phone number to the server in order to avoid fake account creation. One phone number can only create one account every thirty days. Then, a token will be sent to the user on their mobile. You can now register to the server by using the register method.
-Here is an example:
+To register and connect to the repository of your application on the server, first you will need to send your phone number to the server in order to avoid fake account creation. One phone number can only create one account every thirty days. Then, a token will be sent to the user on their mobile. You can now register to the server by using the register method and connect to the directory by using the create function (create also connect if the directory exist).
+
+Here is a simple example:
 
 ```java
+import com.github.homesynck.Response;
+import com.github.homesynck.connect.Directory;
 import com.github.homesynck.connect.Session;
-
-import java.util.Scanner;
+import com.github.homesynck.data.FileManager;
+import com.github.homesynck.data.FileSynck;
 
 public class Register {
+    private static FileManager fileManager;
+    private static FileSynck fileSynck;
+
     public static void main(String[] args) {
         Session session = Session.getSession();
 
-        session.phoneValidation("+33000000000", response -> {
-            // if you pass here, it means that you are connected
-            register(session);
-        }, error -> {
-            System.err.println(error);
-        }); // this is the block which will be called when there is an error while trying to register
-    }
+        Response response = session.phoneValidation("+33000000000");
+        if (!response.isCorrect()) {
+            System.out.println("Error on send phone validation");
+            return;
+        }
 
-    public static void register(Session session) {
+        response = session.register("John doe", "I<3AgeOfEmpires", "123456");
+        if (!response.isCorrect()) {
+            System.out.println("Error on account registration");
+            return;
+        }
 
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Enter the token sent by sms : ");
-        String token = sc.next();
-
-        session.register("John doe", "I<3AgeOfEmpires", token, response -> {
-            System.out.println("You are now connected !");
-
-            // you can continue your application from here
-        }, error -> {
-            System.err.println(error);
-        });
+        Response directoryResponse = Directory.create("insane", "This an insane directory", "");
+        System.out.println(directoryResponse);
+        if (!directoryResponse.isCorrect()) {
+            System.out.println("Error on directory registration");
+            return;
+        }
     }
 }
 ```
