@@ -1,6 +1,6 @@
 # Homesynck Java SDK
 
-![thumbnail](./thumbnail.png)
+![thumbnail](./res/thumbnail.png)
 
 ## How to install?
 
