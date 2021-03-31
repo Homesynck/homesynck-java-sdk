@@ -79,7 +79,7 @@ public class MyApplication {
 
 To login, the process is very similar but without the phone validation
 
-###Synchronizing files
+### Synchronizing files
 
 After connecting to the account, you need to join the synck channel of your directory in order to synchronize your files by creating a new FileSynck and use ` fileSynck.startSyncing();`.
 
@@ -121,6 +121,6 @@ public class MyApplication {
 }
 ```
 
-##License
+## License
 
 Licensed under MIT license ([LICENSE-MIT](LICENSE) or http://opensource.org/licenses/MIT).
