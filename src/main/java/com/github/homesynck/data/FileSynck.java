@@ -18,6 +18,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
+
+/**
+ * class which manages synchronizations with the server
+ */
 public class FileSynck {
 
     private final FileManager fileManager;
@@ -31,6 +35,11 @@ public class FileSynck {
         this.password = password;
     }
 
+    /**
+     * join synchronisation channel and receive updates from the server
+     *
+     * @return callback if join is successful
+     */
     public Response startSyncing() {
         try {
             String res = joinChannel().get();
@@ -41,6 +50,11 @@ public class FileSynck {
         }
     }
 
+    /**
+     * Set a consumer to execute each time a update is apply
+     *
+     * @param onFileModifiedCallback the consumer called on update. It takes noting in entry
+     */
     public void setOnUpdate(@NotNull Consumer<Void> onFileModifiedCallback) {
         this.channel.on("updates", updates -> {
             JSONObject updatesResponse = updates.getResponse();
@@ -49,7 +63,6 @@ public class FileSynck {
             return null;
         });
     }
-
 
     private Future<String> joinChannel() {
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
@@ -79,6 +92,11 @@ public class FileSynck {
         return completableFuture;
     }
 
+    /**
+     * Push update on the server.
+     *
+     * @return  callback if push is successful
+     */
     public Response pushInstructions() {
         List<String> patches = fileManager.getPatch();
 
@@ -147,5 +165,4 @@ public class FileSynck {
         }
         return "";
     }
-
 }
