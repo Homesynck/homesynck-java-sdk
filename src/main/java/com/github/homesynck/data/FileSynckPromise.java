@@ -102,12 +102,7 @@ public class FileSynckPromise {
 
         this.channel.push("push_update", payload, socket.getOpts().getTimeout())
                 .receive("ok", success -> {
-                    try {
-                        fileManager.accept(rank, instruction);
-                        completableFuture.complete("Instruction accepted");
-                    } catch (IOException | PatchFailedException e) {
-                        completableFuture.obtrudeValue(e.getMessage());
-                    }
+                    completableFuture.complete("Instruction accepted");
                     return null;
                 })
                 .receive("error", error -> {
