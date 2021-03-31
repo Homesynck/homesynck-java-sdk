@@ -3,6 +3,7 @@ package com.github.homesynck.data;
 import ch.kuon.phoenix.Channel;
 import ch.kuon.phoenix.Socket;
 import com.github.difflib.patch.PatchFailedException;
+import com.github.homesynck.Response;
 import com.github.homesynck.connect.Connection;
 import com.github.openjson.JSONArray;
 import com.github.openjson.JSONObject;
@@ -76,7 +77,7 @@ public class FileSynck {
         return completableFuture;
     }
 
-    public void pushInstructions() {
+    public Response pushInstructions() {
         List<String> patches = fileManager.getPatch();
 
         System.out.println("Patches: " + patches);
@@ -87,9 +88,10 @@ public class FileSynck {
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
                 System.err.println("There was a problem on pushing: " + e.getMessage());
-                return;
+                return new Response(false, "There was a problem on pushing: " + e.getMessage());
             }
         }
+        return new Response(true, "All files pushed");
     }
 
     private Future<String> pushInstruction(String instruction) {
