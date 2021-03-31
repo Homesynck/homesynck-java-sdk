@@ -98,29 +98,22 @@ public class FileManager {
      * Delete the file specified with the path
      *
      * @param stringPath    path of the file that will be deleted
+     * @throws IOException  if there is an IO exception in the deleteFile sync
      */
-    public void deleteFile(@NotNull String stringPath) {
+    public void deleteFile(@NotNull String stringPath) throws IOException{
 
         File deletedFiles = new File(dataDirectory, "deletedFiles.hs");
 
         File file = new File(storageDirectory, stringPath);
         if (!deletedFiles.exists()){
-            try {
-                deletedFiles.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            deletedFiles.createNewFile();
         }
 
-        try {
-            List<String> deletedPaths = Files.readAllLines(deletedFiles.toPath());
+        List<String> deletedPaths = Files.readAllLines(deletedFiles.toPath());
 
-            deletedPaths.add(file.getPath());
+        deletedPaths.add(file.getPath());
 
-            Files.write(deletedFiles.toPath(),deletedPaths, Charset.defaultCharset());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Files.write(deletedFiles.toPath(),deletedPaths, Charset.defaultCharset());
 
         if (file.delete()){
             file.delete();
