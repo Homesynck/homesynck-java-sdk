@@ -79,11 +79,11 @@ public class FileManager {
     }
 
     /**
-     * Get a file with a specified.
+     * Get a file identify by the path
      *
-     * @param stringPath
-     * @return
-     * @throws IOException
+     * @param stringPath    the path of the file to get content
+     * @return              a String with the file content
+     * @throws IOException  if there is an IO exception in the file
      */
     public String getFile(@NotNull String stringPath) throws IOException {
         List<String> stringList = Files.readAllLines(Paths.get(stringPath));
@@ -97,7 +97,7 @@ public class FileManager {
     /**
      * Delete the file specified with the path
      *
-     * @param stringPath        path of the file that will be deleted
+     * @param stringPath    path of the file that will be deleted
      */
     public void deleteFile(@NotNull String stringPath) {
 
