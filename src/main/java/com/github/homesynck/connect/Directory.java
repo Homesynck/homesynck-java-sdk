@@ -5,11 +5,9 @@ import ch.kuon.phoenix.Socket;
 import com.github.homesynck.Response;
 import com.github.openjson.JSONObject;
 
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 
 public class Directory {
 
@@ -52,7 +50,7 @@ public class Directory {
     }
 
     private static Future<String> getDirectory(Channel ch, Socket socket, JSONObject params, String event){
-        CompletableFuture<String> completableFuture = new CompletableFuture<String>();
+        CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
         ch.push(event, params, socket.getOpts().getTimeout()).receive("ok", msg -> {
             Connection.setDirectoryId(msg.getString("directory_id"));
