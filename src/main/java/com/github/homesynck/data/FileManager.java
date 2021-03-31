@@ -37,33 +37,6 @@ public class FileManager {
         }
     }
 
-    private static Patch<String> getFileDiff(File original, File revised) throws IOException {
-        List<String> list1;
-        if (original == null) {
-            list1 = Collections.emptyList();
-        } else {
-            list1 = Files.readAllLines(original.toPath());
-        }
-        List<String> list2 = Files.readAllLines(revised.toPath());
-
-        return DiffUtils.diff(list1, list2);
-    }
-
-    private static ArrayList<File> getAllFiles(@NotNull File originalFile) {
-        ArrayList<File> allFiles = new ArrayList<>();
-        if (originalFile.listFiles() == null || originalFile.isFile()) {
-            return new ArrayList<>();
-        }
-        for (File f : originalFile.listFiles()) {
-            if (f.isDirectory()) {
-                allFiles.addAll(getAllFiles(f));
-            } else {
-                allFiles.add(f);
-            }
-        }
-        return allFiles;
-    }
-
     /**
      * Edit the file specified by path
      *
@@ -154,6 +127,21 @@ public class FileManager {
         }
     }
 
+    /**
+     * get the last past id pushed on the server
+     *
+     * @return the patch id
+     */
+    public int getPatchId() {
+        try {
+            List<String> list = Files.readAllLines(new File(dataDirectory, "patchlist.hs").toPath());
+            return list.size();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 1;
+        }
+    }
+
     void applyPatch(@NotNull int patchId, @NotNull String path, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
         addUpdate(patchId);
 
@@ -166,7 +154,6 @@ public class FileManager {
         path = path.substring(storageDirectory.getPath().length());
         File saveFile = new File(saveDirectory, path);
 
-        System.out.println(firstLine);
         if (firstLine.trim().startsWith("del")){
             storedFile.delete();
             saveFile.delete();
@@ -196,6 +183,7 @@ public class FileManager {
         Files.write(storedFile.toPath(), result, Charset.defaultCharset());
     }
 
+
     private void addUpdate(int patchId) {
         File patchFile = new File(dataDirectory, "patchList.hs");
         try {
@@ -209,21 +197,6 @@ public class FileManager {
             Files.write(patchFile.toPath(), updateList, Charset.defaultCharset());
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * get the last past id pushed on the server
-     *
-     * @return the patch id
-     */
-    public int getPatchId() {
-        try {
-            List<String> list = Files.readAllLines(new File(dataDirectory, "patchlist.hs").toPath());
-            return list.size();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return 1;
         }
     }
 
@@ -304,5 +277,32 @@ public class FileManager {
             }
         }
         return patches;
+    }
+
+    private static ArrayList<File> getAllFiles(@NotNull File originalFile) {
+        ArrayList<File> allFiles = new ArrayList<>();
+        if (originalFile.listFiles() == null || originalFile.isFile()) {
+            return new ArrayList<>();
+        }
+        for (File f : originalFile.listFiles()) {
+            if (f.isDirectory()) {
+                allFiles.addAll(getAllFiles(f));
+            } else {
+                allFiles.add(f);
+            }
+        }
+        return allFiles;
+    }
+
+    private static Patch<String> getFileDiff(File original, File revised) throws IOException {
+        List<String> list1;
+        if (original == null) {
+            list1 = Collections.emptyList();
+        } else {
+            list1 = Files.readAllLines(original.toPath());
+        }
+        List<String> list2 = Files.readAllLines(revised.toPath());
+
+        return DiffUtils.diff(list1, list2);
     }
 }
