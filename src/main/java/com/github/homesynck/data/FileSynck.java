@@ -15,14 +15,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
-public class FileSynckPromise {
+public class FileSynck {
 
     private final FileManager fileManager;
     private Channel channel;
     private final Socket socket;
     private final String password;
 
-    public FileSynckPromise (@NotNull FileManager fileManager, @NotNull String password) {
+    public FileSynck(@NotNull FileManager fileManager, @NotNull String password) {
         this.fileManager = fileManager;
         this.socket = Connection.getSocket();
         this.password = password;
@@ -137,9 +137,11 @@ public class FileSynckPromise {
 
     static String getFilesPath(String content) {
         String[] lines = content.split(System.lineSeparator());
-        String[] items =  lines[1].split("[+]{3}");
-        if(items.length == 2)
-            return items[1].trim();
+        if (lines.length > 0) {
+            String[] items = lines[1].split("[+]{3}");
+            if (items.length == 2)
+                return items[1].trim();
+        }
         return "";
     }
 
