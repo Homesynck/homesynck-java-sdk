@@ -148,8 +148,12 @@ public class FileManager {
         File saveFile = new File(saveDirectory, path);
 
         if (firstLine.trim().startsWith("del")){
-            storedFile.delete();
-            saveFile.delete();
+            if (storedFile.exists()) {
+                storedFile.delete();
+            }
+            if (saveFile.exists()) {
+                saveFile.delete();
+            }
             return;
         }
 
