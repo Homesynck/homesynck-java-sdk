@@ -18,30 +18,37 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
-
 /**
  * class which manages synchronizations with the server
  */
 public class FileSynck {
 
     private final FileManager fileManager;
-    private Channel channel;
+    private final Channel channel;
     private final Socket socket;
-    private final String password;
-    private String topic;
+    private final String topic;
 
     public FileSynck(@NotNull FileManager fileManager, @NotNull String password) {
         this.fileManager = fileManager;
         this.socket = Connection.getSocket();
-        this.password = password;
 
-        topic = "sync:" + Connection.getDirectoryId();
+        this.topic = "sync:" + Connection.getDirectoryId();
         JSONObject channelParams = new JSONObject();
         channelParams.accumulate("auth_token", Connection.getAuth_token());
         channelParams.accumulate("user_id", Connection.getUser_id());
         channelParams.accumulate("directory_password", password);
         channelParams.accumulate("received_updates", fileManager.getListUpdate());
         this.channel = socket.channel(topic, channelParams);
+    }
+
+    static String getFilesPath(String content) {
+        String[] lines = content.split(System.lineSeparator());
+        if (lines.length > 0) {
+            String[] items = lines[1].split("[+]{3}");
+            if (items.length == 2)
+                return items[1].trim();
+        }
+        return "";
     }
 
     /**
@@ -82,11 +89,11 @@ public class FileSynck {
                     return null;
                 })
                 .receive("error", error -> {
-                    completableFuture.obtrudeException(new Exception("Couldn't joined the " + topic + " channel"));
+                    completableFuture.obtrudeException(new Exception("Couldn't joined the " + this.topic + " channel"));
                     return null;
                 })
                 .receive("timeout", timeout -> {
-                    completableFuture.obtrudeException(new Exception("Timeout on " + topic + " channel"));
+                    completableFuture.obtrudeException(new Exception("Timeout on " + this.topic + " channel"));
                     return null;
                 });
 
@@ -96,13 +103,13 @@ public class FileSynck {
     /**
      * Push update on the server.
      *
-     * @return  callback if push is successful
+     * @return callback if push is successful
      */
     public Response pushInstructions() {
         List<String> patches = fileManager.getPatch();
 
         System.out.println("Patches: " + patches);
-        for(String patch: patches) {
+        for (String patch : patches) {
             try {
                 String pushResponse = pushInstruction(patch).get();
                 System.out.println("Push response: " + pushResponse);
@@ -117,7 +124,7 @@ public class FileSynck {
     private Future<String> pushInstruction(String instruction) {
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
-        int rank = fileManager.getPatchId() +1;
+        int rank = fileManager.getPatchId() + 1;
 
         JSONObject payload = new JSONObject();
         payload.accumulate("rank", rank).accumulate("instructions", instruction);
@@ -142,10 +149,8 @@ public class FileSynck {
     private void applyServerUpdates(JSONObject updates) {
         JSONArray updatesObjects = updates.getJSONArray("updates");
         int nbUpdates = updatesObjects.length();
-        System.out.println(updatesObjects.toString());
-        System.out.println(nbUpdates);
         for (int i = 0; i < nbUpdates; ++i) {
-            JSONObject updateObject =  updatesObjects.getJSONObject((i));
+            JSONObject updateObject = updatesObjects.getJSONObject((i));
             String json = updateObject.getString("instructions");
             String fileName = getFilesPath(json);
             int patchId = updateObject.getInt("rank");
@@ -155,15 +160,5 @@ public class FileSynck {
                 e.printStackTrace();
             }
         }
-    }
-
-    static String getFilesPath(String content) {
-        String[] lines = content.split(System.lineSeparator());
-        if (lines.length > 0) {
-            String[] items = lines[1].split("[+]{3}");
-            if (items.length == 2)
-                return items[1].trim();
-        }
-        return "";
     }
 }
