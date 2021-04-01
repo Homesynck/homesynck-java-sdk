@@ -67,7 +67,8 @@ public class MyApplication {
             return;
         }
 
-        Response directoryResponse = Directory.createSecured("MyDirectory", "The directory for the readme application", "Thumbnail", "directoryPassword");
+        Response directoryResponse = Directory.createSecured("MyDirectory",
+                "The directory for the readme application", "Thumbnail", "directoryPassword");
         System.out.println(directoryResponse);
         if (!directoryResponse.isCorrect()) {
             System.out.println("Error on directory registration");
