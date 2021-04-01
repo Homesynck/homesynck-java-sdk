@@ -12,7 +12,7 @@ Add the following dependency to your **pom.xml** to import the api :
 <dependency>
     <groupId>com.github.homesynck</groupId>
     <artifactId>homesynck-java-sdk</artifactId>
-    <version>0.2.2</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -20,7 +20,7 @@ Add the following dependency to your **pom.xml** to import the api :
 
 Add the following dependency to your **build.gradle** to import the api :
 ```gradle
-implementation group: 'com.github.homesynck', name: 'homesynck-java-sdk', version: '0.2.2'
+implementation group: 'com.github.homesynck', name: 'homesynck-java-sdk', version: '1.0.1'
 ```
 ### Other
 
