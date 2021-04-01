@@ -67,7 +67,7 @@ public class MyApplication {
             return;
         }
 
-        Response directoryResponse = Directory.create("MyDirectory", "The directory for the readme application", "password");
+        Response directoryResponse = Directory.createSecured("MyDirectory", "The directory for the readme application", "Thumbnail", "directoryPassword");
         System.out.println(directoryResponse);
         if (!directoryResponse.isCorrect()) {
             System.out.println("Error on directory registration");
@@ -85,11 +85,13 @@ To login, the process is very similar but without the phone validation
 
 After connecting to the account, you need to join the synck channel of your directory in order to synchronize your files by creating a new FileSynck and use ` fileSynck.startSyncing();`.
 
-To activate the live update, you need to register a Consumer with `fileSynck.setOnUpdate(Promise<Void> promise);`. You are now ready to edit or create files with `fileManager.editFile(String path, String content);`, get every files in a HashMap<String, String> with `fileManager.getFiles();`, specify a path with `fileManager.getFile(String Path);`, or delete a file with `fileManager.deleteFile(String path);`. If you want to save these datas and push all of these changes on the server, you can use `fileSynck.pushInstructions();`.
+To activate the live update, you need to register a Consumer with `fileSynck.setOnUpdate(Promise<Void> promise);` before joining the channel. You are now ready to edit or create files with `fileManager.editFile(String path, String content);`, get every files in a HashMap<String, String> with `fileManager.getFiles();`, specify a path with `fileManager.getFile(String Path);`, or delete a file with `fileManager.deleteFile(String path);`. If you want to save these datas and push all of these changes on the server, you can use `fileSynck.pushInstructions();`.
 
 Here is a short example where we show "update(s) receive" when we receive one or more updates, then edit and delete two files and push these updates to the server.
 
 ```java
+import com.github.homesynck.data.FileSynck;
+
 public class MyApplication {
     private static FileManager fileManager;
     private static FileSynck fileSynck;
@@ -99,16 +101,18 @@ public class MyApplication {
 
         // You need to choose where the API store all of the datas.
         fileManager = new FileManager("./myStorageDirectory/");
-
-        Response response = fileSynck.startSyncing();
-        if (!response.isCorrect){
-            System.out.println("Error on join: " + response);
-            return;
-        }
-
+        //let the directoryPassword empty if the directory is not secured
+        fileSynck = new FileSynck(fileManager, "directoryPassword");
+        
         fileSynck.setOnUpdate(msg -> {
             System.out.println("update(s) receive");
         });
+
+        Response response = fileSynck.startSyncing();
+        if (!response.isCorrect) {
+            System.out.println("Error on join: " + response);
+            return;
+        }
 
         try {
             fileManager.editFile("/myDocument/PositiveReview.txt", "this documentation is very amazing!");
