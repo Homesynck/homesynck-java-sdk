@@ -27,11 +27,11 @@ public class FileManager {
         if (!storageDirectory.exists()) {
             storageDirectory.mkdirs();
         }
-        this.saveDirectory = new File(storageFile, ".homsynck/");
+        this.saveDirectory = new File(storageFile, "homsynck/");
         if (!saveDirectory.exists()) {
             saveDirectory.mkdirs();
         }
-        this.dataDirectory = new File(storageFile, ".data/");
+        this.dataDirectory = new File(storageFile, "data/");
         if (!dataDirectory.exists()) {
             dataDirectory.mkdirs();
         }
@@ -49,7 +49,9 @@ public class FileManager {
         File f = new File(storageDirectory, stringPath);
         f = f.getParentFile();
         f = new File(f, "/");
-        f.mkdirs();
+        boolean isCreated = f.mkdirs();
+        if(!isCreated)
+            throw new IOException("This file can't be created");
         Path out = Paths.get(storageDirectory.getPath() + stringPath);
         List<String> contentList = new ArrayList<>(Arrays.asList(content.split(System.lineSeparator())));
         Files.write(out, contentList, Charset.defaultCharset());
@@ -115,9 +117,9 @@ public class FileManager {
 
         Files.write(deletedFiles.toPath(),deletedPaths, Charset.defaultCharset());
 
-        if (file.delete()){
-            file.delete();
-        }
+        boolean isDeleted = file.delete();
+        if(!isDeleted)
+            throw new IOException("The file was not deleted");
     }
 
     /**
