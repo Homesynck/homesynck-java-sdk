@@ -28,11 +28,11 @@ public class FileManager {
         if (!storageDirectory.exists()) {
             storageDirectory.mkdirs();
         }
-        this.saveDirectory = new File(storageFile, "homsynck/");
+        this.saveDirectory = new File(storageFile, ".homsynck/");
         if (!saveDirectory.exists()) {
             saveDirectory.mkdirs();
         }
-        this.dataDirectory = new File(storageFile, "data/");
+        this.dataDirectory = new File(storageFile, ".data/");
         if (!dataDirectory.exists()) {
             dataDirectory.mkdirs();
         }
