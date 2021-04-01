@@ -50,9 +50,7 @@ public class FileManager {
         File f = new File(storageDirectory, stringPath);
         f = f.getParentFile();
         f = new File(f, "/");
-        boolean isCreated = f.mkdirs();
-        if(!isCreated)
-            throw new IOException("This file can't be created");
+        f.mkdirs();
         Path out = Paths.get(storageDirectory.getPath() + stringPath);
         List<String> contentList = new ArrayList<>(Arrays.asList(content.split(System.lineSeparator())));
         Files.write(out, contentList, Charset.defaultCharset());
