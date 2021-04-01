@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -102,7 +103,7 @@ public class FileManager {
      * @param stringPath    path of the file that will be deleted
      * @throws IOException  if there is an IO exception in the deleteFile sync
      */
-    public void deleteFile(@NotNull String stringPath) throws IOException{
+    public void deleteFile(@NotNull String stringPath) throws IOException {
 
         File deletedFiles = new File(dataDirectory, "deletedFiles.hs");
 
@@ -117,9 +118,7 @@ public class FileManager {
 
         Files.write(deletedFiles.toPath(),deletedPaths, Charset.defaultCharset());
 
-        boolean isDeleted = file.delete();
-        if(!isDeleted)
-            throw new IOException("The file was not deleted");
+        Files.delete(file.toPath());
     }
 
     /**
@@ -151,10 +150,10 @@ public class FileManager {
 
         if (firstLine.trim().startsWith("del")){
             if (storedFile.exists()) {
-                storedFile.delete();
+                Files.delete(storedFile.toPath());
             }
             if (saveFile.exists()) {
-                saveFile.delete();
+                Files.delete(saveFile.toPath());
             }
             return;
         }
@@ -235,7 +234,7 @@ public class FileManager {
                     sb.append("+++").append(Optional.ofNullable(s).orElse("/dev/null"));
                     patches.add(sb.toString());
                 }
-                deletedFile.delete();
+                Files.delete(deletedFile.toPath());
             }
         } catch (IOException e) {
             e.printStackTrace();
