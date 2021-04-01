@@ -62,6 +62,8 @@ public class Session {
      * @return
      */
     public Response register(String username, String password, String token) {
+        setName(username);
+
         Socket socket;
 
         socket = Connection.getSocket();
@@ -92,6 +94,8 @@ public class Session {
      * @param password        password of the user
      */
     public Response login(String username, String password) {
+        setName(username);
+
         Socket socket = Connection.getSocket();
 
         Channel ch = socket.channel("auth:lobby", new JSONObject());
