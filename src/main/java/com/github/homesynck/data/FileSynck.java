@@ -28,11 +28,20 @@ public class FileSynck {
     private Channel channel;
     private final Socket socket;
     private final String password;
+    private String topic;
 
     public FileSynck(@NotNull FileManager fileManager, @NotNull String password) {
         this.fileManager = fileManager;
         this.socket = Connection.getSocket();
         this.password = password;
+
+        topic = "sync:" + Connection.getDirectoryId();
+        JSONObject channelParams = new JSONObject();
+        channelParams.accumulate("auth_token", Connection.getAuth_token());
+        channelParams.accumulate("user_id", Connection.getUser_id());
+        channelParams.accumulate("directory_password", password);
+        channelParams.accumulate("received_updates", fileManager.getListUpdate());
+        this.channel = socket.channel(topic, channelParams);
     }
 
     /**
@@ -66,14 +75,6 @@ public class FileSynck {
 
     private Future<String> joinChannel() {
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
-
-        String topic = "sync:" + Connection.getDirectoryId();
-        JSONObject channelParams = new JSONObject();
-        channelParams.accumulate("auth_token", Connection.getAuth_token());
-        channelParams.accumulate("user_id", Connection.getUser_id());
-        channelParams.accumulate("directory_password", password);
-        channelParams.accumulate("received_updates", fileManager.getListUpdate());
-        this.channel = socket.channel(topic, channelParams);
 
         this.channel.join(socket.getOpts().getTimeout())
                 .receive("ok", success -> {
