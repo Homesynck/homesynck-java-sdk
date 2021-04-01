@@ -138,8 +138,6 @@ public class FileManager {
     }
 
     void applyPatch(@NotNull int patchId, @NotNull String path, @NotNull String unifiedPatch) throws IOException, PatchFailedException {
-        addUpdate(patchId);
-
         List<String> unifiedPatchList = Arrays.asList(unifiedPatch.split(System.lineSeparator()));
 
         String firstLine = unifiedPatchList.get(0);
@@ -182,8 +180,7 @@ public class FileManager {
         Files.write(storedFile.toPath(), result, Charset.defaultCharset());
     }
 
-
-    private void addUpdate(int patchId) {
+    void addUpdate(int patchId) {
         File patchFile = new File(dataDirectory, "patchList.hs");
         try {
             List<String> updateList = Files.readAllLines(patchFile.toPath());

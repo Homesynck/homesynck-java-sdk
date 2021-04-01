@@ -154,6 +154,7 @@ public class FileSynck {
             String json = updateObject.getString("instructions");
             String fileName = getFilesPath(json);
             int patchId = updateObject.getInt("rank");
+            fileManager.addUpdate(patchId);
             try {
                 fileManager.applyPatch(patchId, fileName, json);
             } catch (IOException | PatchFailedException e) {
