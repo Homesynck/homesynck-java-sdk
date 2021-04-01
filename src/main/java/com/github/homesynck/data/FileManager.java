@@ -71,7 +71,8 @@ public class FileManager {
                 for (String s : list) {
                     sb.append(s).append(System.lineSeparator());
                 }
-                hashMap.put(f.getPath(), sb.toString());
+                String path = f.getPath().substring(storageDirectory.getPath().length());
+                hashMap.put(path, sb.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
