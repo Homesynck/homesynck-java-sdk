@@ -112,7 +112,7 @@ public class Session {
         }
     }
 
-    public Future<String> connect(@NotNull ch.kuon.phoenix.Channel ch, @NotNull Socket socket, JSONObject params, String event) {
+    private Future<String> connect(@NotNull ch.kuon.phoenix.Channel ch, @NotNull Socket socket, JSONObject params, String event) {
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
         ch.push(event, params, socket.getOpts().getTimeout()).receive("ok", msg -> {
@@ -159,7 +159,7 @@ public class Session {
         }
     }
 
-    public Future<String> pushPhoneValidation(@NotNull ch.kuon.phoenix.Channel ch, @NotNull Socket socket, JSONObject params) {
+    private Future<String> pushPhoneValidation(@NotNull ch.kuon.phoenix.Channel ch, @NotNull Socket socket, JSONObject params) {
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
         ch.push("validate_phone", params, socket.getOpts().getTimeout()).receive("ok", msg -> {

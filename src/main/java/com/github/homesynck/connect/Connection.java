@@ -4,6 +4,9 @@ import ch.kuon.phoenix.Socket;
 
 import java.util.HashMap;
 
+/**
+ * Connection manage the socket of the application to communicate with the Elixir server
+ */
 public class Connection {
 
     private static Socket socket;
@@ -38,11 +41,20 @@ public class Connection {
         Connection.directoryId = directoryId;
     }
 
+    /**
+     * Set a new url host for synchronization. The url can use either the ws:// or wss:// scheme.
+     *
+     * @param newHost The new host
+     */
     public static void setHost(String newHost) {
         host = newHost;
     }
 
-
+    /**
+     * Return the Socket for the connection. It create the socket if he doesn't exist
+     *
+     * @return  return the socket
+     */
     public static Socket getSocket() {
         if (socket == null) {
             newSocket();
