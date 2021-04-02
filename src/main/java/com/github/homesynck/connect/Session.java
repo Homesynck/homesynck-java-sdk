@@ -18,6 +18,7 @@ public class Session {
 
     private static Session session;
     private boolean phone;
+    private String phoneToken = "";
 
     private String name;
 
@@ -54,12 +55,29 @@ public class Session {
         this.name = name;
     }
 
+
+    public void setPhoneToken(String phoneToken) {
+        this.phoneToken = phoneToken;
+    }
+
+    /**
+     * Allow user to register to the server. This methode require to set phoneToken before the registration
+     *
+     * @param username  username of the new user
+     * @param password  password of the new user
+     * @return          A response if the register is validate by the server
+     */
+    public Response register(String username, String password){
+        return register(username, password, phoneToken);
+    }
+
     /**
      * Allow user to register to the server.
-     *  @param username        username of the new user
+     *
+     *  @param username       username of the new user
      * @param password        password of the new user
-     * @param token           the token for the new user
-     * @return
+     * @param token           the phone token to register
+     * @return                A response if the register is validate by the server
      */
     public Response register(String username, String password, String token) {
         setName(username);
